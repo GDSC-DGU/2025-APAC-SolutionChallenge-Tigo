@@ -1,10 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:tigo/app/env/common/environment_factory.dart';
 import 'package:tigo/data/factory/storage_factory.dart';
+import 'package:tigo/firebase_options.dart';
 import 'package:tigo/main_app.dart';
 import 'package:timezone/data/latest.dart' as tz;
-
 void main() async {
   await onInitSystem();
   await onReadySystem();
@@ -15,6 +16,7 @@ void main() async {
 Future<void> onInitSystem() async {
   // Widget Binding
   WidgetsFlutterBinding.ensureInitialized();
+
 
   // DateTime Formatting
   await initializeDateFormatting();
@@ -30,6 +32,9 @@ Future<void> onInitSystem() async {
 Future<void> onReadySystem() async {
   // Storage & Database
   await StorageFactory.onReady();
+ // Firebase Initializing
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
 
   // If new download app, remove tokens
   // When token exists, isFirstRun is false
