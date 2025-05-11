@@ -9,7 +9,7 @@ class LoginMiddleware extends GetMiddleware {
     bool isNotLogin = !StorageFactory.systemProvider.isLogin;
 
     if (isNotLogin) {
-      return const RouteSettings(name: AppRoutes.LOGIN);
+      return const RouteSettings(name: AppRoutes.SIGN_IN);
     }
 
     return null;

@@ -17,6 +17,8 @@ Future<void> onInitSystem() async {
   // Widget Binding
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Firebase Initializing
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // DateTime Formatting
   await initializeDateFormatting();
@@ -32,8 +34,6 @@ Future<void> onInitSystem() async {
 Future<void> onReadySystem() async {
   // Storage & Database
   await StorageFactory.onReady();
- // Firebase Initializing
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
 
   // If new download app, remove tokens

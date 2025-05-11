@@ -1,22 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:tigo/app/config/color_system.dart';
-import 'package:tigo/app/config/font_system.dart';
+import 'package:tigo/app/config/app_routes.dart';
+import 'package:tigo/app/utility/security_util.dart';
+import 'package:tigo/core/screen/base_screen.dart';
+import 'package:tigo/presentation/view/home/home_screen.dart';
+import 'package:tigo/presentation/view/live_chatbot/live_chatbot_screen.dart';
+import 'package:tigo/presentation/view/profile/my_page_screen.dart';
+import 'package:tigo/presentation/view/root/widget/custom_bottom_navigation_bar/custom_bottom_navigation_bar.dart';
 import 'package:tigo/presentation/view_model/root/root_view_model.dart';
+import 'package:tigo/presentation/widget/dialog/sign_in_dialog.dart';
+import 'package:tigo/core/constant/assets.dart';
 
-class RootScreen extends GetView<RootViewModel> {
+class RootScreen extends BaseScreen<RootViewModel> {
   const RootScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: ColorSystem.white,
-      body: Center(
-        child: Text(
-          'Tigo Root Screen',
-          style: FontSystem.H6,
-        ),
+  Widget buildBody(BuildContext context) {
+    return Obx(
+          () => IndexedStack(
+        index: viewModel.selectedIndex,
+        children: const [
+           LiveChatbotScreen(),
+          HomeScreen(),
+          ProfileScreen(),
+        ],
       ),
     );
   }
+
+  @override
+  Widget? get buildFloatingActionButton => FloatingActionButton(
+    elevation: 2,
+    shape: const CircleBorder(),
+    onPressed: () {
+      if (viewModel.selectedIndex != 1) {
+        viewModel.changeIndex(1);
+      } else {
+        if (!SecurityUtil.isSignin) {
+          Get.dialog(const SignInDialog());
+        } else {
+          // Get.toNamed(AppRoutes.RANKING);
+        }
+      }
+    },
+    backgroundColor: const Color(0xFF90CDBE),
+    child:SvgPicture.asset(
+    Assets.homeIcon,
+    width: 24,
+    height: 24,
+  ),
+    // child: Obx(
+    //       () => SvgPicture.asset(
+    //     viewModel.selectedIndex != 1
+    //         ? 'assets/icons/home.svg'
+    //         : 'assets/icons/home.svg',
+    //     width: 32,
+    //     height: 32,
+    //     colorFilter: const ColorFilter.mode(
+    //       Colors.white,
+    //       BlendMode.srcIn,
+    //     ),
+    //   ),
+    // ),
+  );
+
+  @override
+  FloatingActionButtonLocation? get floatingActionButtonLocation =>
+      FloatingActionButtonLocation.centerDocked;
+
+  @override
+  bool get extendBodyBehindAppBar => true;
+
+  @override
+  Widget? buildBottomNavigationBar(BuildContext context) =>
+      const CustomBottomNavigationBar();
 }

@@ -4,7 +4,7 @@ abstract class AppRoutes {
   // 스플래시, 온보딩, 로그인
   static const String SPLASH = '/splash';
   static const String ON_BOARDING = '/on-boarding';
-  static const String LOGIN = '/login';
+  static const String SIGN_IN = '/sign-in';
 
   // 루트 탭
   static const String ROOT = '/';
