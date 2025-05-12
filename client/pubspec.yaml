@@ -62,6 +62,9 @@ dependencies:
   web_socket_channel: ^3.0.3
   stomp_dart_client: ^2.1.3
 
+  # rive
+  rive: ^0.13.20
+
   # for LiveChatBot
   camera: ^0.11.1
   flutter_sound: ^9.28.0
@@ -118,6 +121,7 @@ dependencies:
   fl_chart: ^0.66.0
   cloud_firestore: ^5.6.7
   flutter_local_notifications: ^18.0.1
+  flutter_native_splash: ^2.4.6
 
 
 dev_dependencies:
@@ -168,3 +172,8 @@ flutter:
           weight: 800
         - asset: assets/fonts/Pretendard-Black.otf
           weight: 900
+
+
+flutter_native_splash:
+  color: "#FFFFFF"  # 배경색 설정
+  image: assets/images/splash_image.png  # 스플래시 이미지 경로
