@@ -20,9 +20,7 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
         child: Container(
           decoration: const ShapeDecoration(
             color: Colors.transparent,
-            shadows: [
-              BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 0),
-            ],
+
             shape: CustomBottomNavigationBarShape(),
           ),
           child: BottomAppBar(
@@ -31,21 +29,21 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
             color: Colors.white,
             padding: const EdgeInsets.all(0),
             shape: const CircularNotchedRectangle(),
-            notchMargin: 10.0,
+            notchMargin: 1,
             clipBehavior: Clip.antiAliasWithSaveLayer,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildBottomNavigationBarItem(
                   index: 0,
-                  size: 32,
+                  size: 48,
                   svgPath: Assets.webcamIcon,
                 ),
 
                 const Flexible(child: SizedBox(width: 80)),
                 _buildBottomNavigationBarItem(
                   index: 2,
-                  size: 32,
+                  size: 48,
                   svgPath: Assets.profileIcon,
                 ),
               ],
@@ -68,13 +66,13 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
         child: SvgPicture.asset(
           svgPath,
           width: size,
-          colorFilter:
-              viewModel.selectedIndex == index
-                  ? const ColorFilter.mode(Color(0xFF90CDBE), BlendMode.srcATop)
-                  : const ColorFilter.mode(
-                    Color(0xFF67686D),
-                    BlendMode.srcATop,
-                  ),
+          // colorFilter:
+          //     viewModel.selectedIndex == index
+          //         ? const ColorFilter.mode(Color(0xFF90CDBE), BlendMode.srcATop)
+          //         : const ColorFilter.mode(
+          //           Color(0xFF67686D),
+          //           BlendMode.srcATop,
+          //         ),
         ),
       ),
     ),

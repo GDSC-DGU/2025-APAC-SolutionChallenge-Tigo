@@ -33,8 +33,8 @@ class RootScreen extends BaseScreen<RootViewModel> {
       }
     },
     child: Container(
-      width: 80,
-      height: 80,
+      width: 65,
+      height: 65,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: const LinearGradient(
@@ -46,15 +46,15 @@ class RootScreen extends BaseScreen<RootViewModel> {
           BoxShadow(
             color: Colors.black.withOpacity(0.12),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Center(
         child: SvgPicture.asset(
           Assets.homeIcon,
-          width: 30,
-          height: 30,
+          width: 25,
+          height: 25,
           color: Colors.white,
         ),
       ),
