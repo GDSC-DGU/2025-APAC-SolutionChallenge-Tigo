@@ -17,10 +17,13 @@ class CustomBottomNavigationBarShape extends ShapeBorder {
         ..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(0)))
         ..close(),
       Path()
-        ..addOval(Rect.fromCenter(
+        ..addOval(
+          Rect.fromCenter(
             center: rect.center.translate(0, -rect.height / 2),
             height: 80.0,
-            width: 80.0))
+            width: 80.0,
+          ),
+        )
         ..close(),
     );
   }

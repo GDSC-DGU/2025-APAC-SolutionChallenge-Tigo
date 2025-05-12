@@ -12,7 +12,7 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
   @override
   Widget buildView(BuildContext context) {
     return Obx(
-          () => Theme(
+      () => Theme(
         data: ThemeData(
           highlightColor: Colors.transparent,
           splashColor: Colors.transparent,
@@ -21,11 +21,7 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
           decoration: const ShapeDecoration(
             color: Colors.transparent,
             shadows: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 0,
-              ),
+              BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 0),
             ],
             shape: CustomBottomNavigationBarShape(),
           ),
@@ -43,17 +39,14 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
                 _buildBottomNavigationBarItem(
                   index: 0,
                   size: 32,
-                  svgPath: Assets.webcamIcon
+                  svgPath: Assets.webcamIcon,
                 ),
-                const Flexible(
-                  child: SizedBox(
-                    width: 80,
-                  ),
-                ),
+
+                const Flexible(child: SizedBox(width: 80)),
                 _buildBottomNavigationBarItem(
                   index: 2,
                   size: 32,
-                  svgPath:  Assets.profileIcon,
+                  svgPath: Assets.profileIcon,
                 ),
               ],
             ),
@@ -67,21 +60,23 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
     required int index,
     required double size,
     required String svgPath,
-  }) =>
-      Expanded(
-        child: InkWell(
-          onTap: () => viewModel.changeIndex(index),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: SvgPicture.asset(
-              svgPath,
-              width: size,
-              colorFilter: viewModel.selectedIndex == index
+  }) => Expanded(
+    child: InkWell(
+      onTap: () => viewModel.changeIndex(index),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        child: SvgPicture.asset(
+          svgPath,
+          width: size,
+          colorFilter:
+              viewModel.selectedIndex == index
                   ? const ColorFilter.mode(Color(0xFF90CDBE), BlendMode.srcATop)
                   : const ColorFilter.mode(
-                  Color(0xFF67686D), BlendMode.srcATop),
-            ),
-          ),
+                    Color(0xFF67686D),
+                    BlendMode.srcATop,
+                  ),
         ),
-      );
+      ),
+    ),
+  );
 }

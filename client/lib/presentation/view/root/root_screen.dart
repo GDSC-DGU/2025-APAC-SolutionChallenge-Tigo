@@ -18,51 +18,47 @@ class RootScreen extends BaseScreen<RootViewModel> {
   @override
   Widget buildBody(BuildContext context) {
     return Obx(
-          () => IndexedStack(
+      () => IndexedStack(
         index: viewModel.selectedIndex,
-        children: const [
-           LiveChatbotScreen(),
-          HomeScreen(),
-          ProfileScreen(),
-        ],
+        children: const [LiveChatbotScreen(), HomeScreen(), ProfileScreen()],
       ),
     );
   }
 
   @override
-  Widget? get buildFloatingActionButton => FloatingActionButton(
-    elevation: 2,
-    shape: const CircleBorder(),
-    onPressed: () {
+  Widget? get buildFloatingActionButton => GestureDetector(
+    onTap: () {
       if (viewModel.selectedIndex != 1) {
         viewModel.changeIndex(1);
-      } else {
-        if (!SecurityUtil.isSignin) {
-          Get.dialog(const SignInDialog());
-        } else {
-          // Get.toNamed(AppRoutes.RANKING);
-        }
       }
     },
-    backgroundColor: const Color(0xFF90CDBE),
-    child:SvgPicture.asset(
-    Assets.homeIcon,
-    width: 24,
-    height: 24,
-  ),
-    // child: Obx(
-    //       () => SvgPicture.asset(
-    //     viewModel.selectedIndex != 1
-    //         ? 'assets/icons/home.svg'
-    //         : 'assets/icons/home.svg',
-    //     width: 32,
-    //     height: 32,
-    //     colorFilter: const ColorFilter.mode(
-    //       Colors.white,
-    //       BlendMode.srcIn,
-    //     ),
-    //   ),
-    // ),
+    child: Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF5CA9FF), Color(0xFFD1C2FF)],
+          begin: Alignment.bottomRight,
+          end: Alignment.topRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: SvgPicture.asset(
+          Assets.homeIcon,
+          width: 30,
+          height: 30,
+          color: Colors.white,
+        ),
+      ),
+    ),
   );
 
   @override

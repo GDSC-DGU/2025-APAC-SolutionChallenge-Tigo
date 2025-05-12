@@ -5,9 +5,12 @@ class Assets {
   static const String iconsGoogleLogo = 'assets/icons/google_logo.svg';
   static const String gradientBackgroundImage = 'assets/images/gradient_background_image.png';
   static const String tigoAppLogo = 'assets/images/tigo_app_logo.png';
-
+  static const String homeTigoBackground = 'assets/images/home_tigo_background.png';
+  static const String pngTigo = 'assets/images/png_tigo.png';
   // icons
   static const String homeIcon = 'assets/icons/home_icon.svg';
   static const String profileIcon = 'assets/icons/profile_icon.svg';
   static const String webcamIcon = 'assets/icons/webcam_icon.svg';
+  static const String homePureIcon = 'assets/icons/home_pure_icon.svg';
+
 }
