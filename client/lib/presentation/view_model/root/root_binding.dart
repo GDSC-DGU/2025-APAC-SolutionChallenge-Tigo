@@ -8,6 +8,7 @@ class RootBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<RootViewModel>(() => RootViewModel());
+    
     LiveChatbotBinding().dependencies();
     HomeBinding().dependencies();
     ProfileBinding().dependencies();

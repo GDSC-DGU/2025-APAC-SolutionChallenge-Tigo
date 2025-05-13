@@ -129,6 +129,26 @@ abstract class ColorSystem {
     },
   );
   static const int _blueValue = 0xFF5891EB;
+
+  /// Grey Color
+  static MaterialColor grey = const MaterialColor(
+    _greyPrimaryValue,
+    <int, Color>{
+      100: Color(0xFFF8F9FC),
+      200: Color(0xFFF0F1F5),
+      300: Color(0xFFDBDCE5),
+      400: Color(0xFFBDBEC5),
+      500: Color(0xFFACADB2),
+      600: Color(0xFF96979E),
+      700: Color(0xFF808289),
+      800: Color(0xFF6B6D75),
+      900: Color(0xFF575861),
+      1000: Color(0xFF43454C),
+    },
+  );
+  static const int _greyPrimaryValue = 0xFFACADB2;
+
+
 }
 
 

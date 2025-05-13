@@ -20,7 +20,11 @@ class RootScreen extends BaseScreen<RootViewModel> {
     return Obx(
       () => IndexedStack(
         index: viewModel.selectedIndex,
-        children: const [LiveChatbotScreen(), HomeScreen(), ProfileScreen()],
+        children: const [
+          LiveChatbotScreen(),
+          HomeScreen(),
+          ProfileScreen(),
+        ],
       ),
     );
   }

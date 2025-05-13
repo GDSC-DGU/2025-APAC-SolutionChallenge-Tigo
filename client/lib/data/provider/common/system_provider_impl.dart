@@ -6,106 +6,35 @@ class SystemProviderImpl implements SystemProvider {
   SystemProviderImpl({
     required GetStorage normalStorage,
     required FlutterSecureStorage secureStorage,
-  })  : _normalStorage = normalStorage,
-        _secureStorage = secureStorage;
+  }) : _normalStorage = normalStorage,
+       _secureStorage = secureStorage;
 
   final GetStorage _normalStorage;
   final FlutterSecureStorage _secureStorage;
 
-  String? _accessToken;
-  String? _refreshToken;
+  static const String _isLoginKey = 'isLogin';
+  static const String _isFirstRunKey = 'isFirstRun';
 
-  /* ------------------------------------------------------------ */
-  /* Initialize ------------------------------------------------- */
-  /* ------------------------------------------------------------ */
   @override
   Future<void> onInit() async {
-    await _normalStorage.writeIfNull(SystemProviderExt.isFirstRun, true);
-
-    _accessToken = await _secureStorage.read(
-      key: SystemProviderExt.accessToken,
-    );
-    _refreshToken = await _secureStorage.read(
-      key: SystemProviderExt.refreshToken,
-    );
+    await _normalStorage.writeIfNull(_isFirstRunKey, true);
   }
 
   @override
-  Future<void> allocateTokens({
-    required String accessToken,
-    required String refreshToken,
-  }) async {
-    await _secureStorage.write(
-      key: SystemProviderExt.accessToken,
-      value: accessToken,
-    );
-    await _secureStorage.write(
-      key: SystemProviderExt.refreshToken,
-      value: refreshToken,
-    );
-
-    _accessToken = accessToken;
-    _refreshToken = refreshToken;
-  }
+  bool get isLogin => _normalStorage.read(_isLoginKey) ?? false;
 
   @override
-  Future<void> deallocateTokens() async {
-    await _secureStorage.delete(key: SystemProviderExt.accessToken);
-    await _secureStorage.delete(key: SystemProviderExt.refreshToken);
-
-    _accessToken = null;
-    _refreshToken = null;
+  Future<void> setLogin(bool value) async {
+    await _normalStorage.write(_isLoginKey, value);
   }
 
-  /* ------------------------------------------------------------ */
-  /* Default ---------------------------------------------------- */
-  /* ------------------------------------------------------------ */
-  @override
-  bool get isLogin => _accessToken != null && _refreshToken != null;
-
-  /* ------------------------------------------------------------ */
-  /* Getter ----------------------------------------------------- */
-  /* ------------------------------------------------------------ */
   @override
   bool getFirstRun() {
-    return _normalStorage.read(SystemProviderExt.isFirstRun)!;
+    return _normalStorage.read(_isFirstRunKey) ?? true;
   }
 
-  @override
-  String getAccessToken() {
-    return _accessToken!;
-  }
-
-  @override
-  String getRefreshToken() {
-    return _refreshToken!;
-  }
-
-  /* ------------------------------------------------------------ */
-  /* Setter ----------------------------------------------------- */
-  /* ------------------------------------------------------------ */
   @override
   Future<void> setFirstRun(bool isFirstRun) async {
-    await _normalStorage.write(SystemProviderExt.isFirstRun, isFirstRun);
-  }
-
-  @override
-  Future<void> setAccessToken(String accessToken) async {
-    await _secureStorage.write(
-      key: SystemProviderExt.accessToken,
-      value: accessToken,
-    );
-
-    _accessToken = accessToken;
-  }
-
-  @override
-  Future<void> setRefreshToken(String refreshToken) async {
-    await _secureStorage.write(
-      key: SystemProviderExt.refreshToken,
-      value: refreshToken,
-    );
-
-    _refreshToken = refreshToken;
+    await _normalStorage.write(_isFirstRunKey, isFirstRun);
   }
 }

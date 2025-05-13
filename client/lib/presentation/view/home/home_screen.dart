@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tigo/core/constant/assets.dart';
 import 'package:tigo/core/screen/base_screen.dart';
@@ -87,10 +88,16 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(radius: 24),
+                // 실제 viewModel.userBriefState.photoUrl 사용
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: CachedNetworkImageProvider(
+                    viewModel.userBriefState.photoUrl ?? '',
+                  ),
+                ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Hi, scott',
+                Text(
+                  'Hi, ${viewModel.userBriefState.nickname}',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -99,8 +106,12 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Plans with Tigo',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  'How about Plans with Tigo',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ],
             ),

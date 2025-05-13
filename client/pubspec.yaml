@@ -172,8 +172,3 @@ flutter:
           weight: 800
         - asset: assets/fonts/Pretendard-Black.otf
           weight: 900
-
-
-flutter_native_splash:
-  color: "#FFFFFF"  # 배경색 설정
-  image: assets/images/splash_image.png  # 스플래시 이미지 경로

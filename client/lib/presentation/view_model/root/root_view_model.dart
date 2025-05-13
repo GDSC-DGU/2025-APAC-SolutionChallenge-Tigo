@@ -26,7 +26,7 @@ class RootViewModel extends GetxController {
   /* ------------------------------------------------------ */
   /* ----------------- Public Fields ---------------------- */
   /* ------------------------------------------------------ */
-  DateTime get currentAt => _currentAt.value;
+  // DateTime get currentAt => _currentAt.value;
   int get selectedIndex => _selectedIndex.value;
 
   UserBriefState get userBriefState => _userBriefState.value;
@@ -48,7 +48,6 @@ class RootViewModel extends GetxController {
 
     // Private Fields
     _currentAt = DateTime.now().obs;
-    _selectedIndex = 2.obs;
   }
 
   void changeIndex(int index) async {

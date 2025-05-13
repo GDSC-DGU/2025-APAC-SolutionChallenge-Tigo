@@ -17,17 +17,20 @@ class SignInScreen extends BaseScreen<SignInViewModel>{
         height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image:AssetImage(Assets.gradientBackgroundImage),
+            image:AssetImage(Assets.splashImage),
             fit: BoxFit.cover,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 500),
-            GoogleSignInButton(),
-            const SizedBox(height: 10),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 500),
+              GoogleSignInButton(),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
     );

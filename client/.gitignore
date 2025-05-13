@@ -345,7 +345,7 @@ client/android/app/google-services.json
 firebase_options.dart
 
 # End of https://www.toptal.com/developers/gitignore/api/dart,flutter,macos,androidstudio,xcode,windows,visualstudiocode
-/firebase.json
+# /firebase.json
 /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
 /macos/Runner/GoogleService-Info.plist

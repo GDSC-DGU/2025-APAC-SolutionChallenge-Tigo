@@ -1,36 +1,36 @@
 class UserBriefState {
-  final String uid;
+  final String id;
   final String? email;
-  final String? displayName;
+  final String? nickname;
   final String? photoUrl;
 
   const UserBriefState({
-    required this.uid,
+    required this.id,
     this.email,
-    this.displayName,
+    this.nickname,
     this.photoUrl,
   });
 
-  factory UserBriefState.initial() {
-    return const UserBriefState(
-      uid: '',
-      email: '',
-      displayName: '',
-      photoUrl: '',
-    );
-  }
-
   UserBriefState copyWith({
-    String? uid,
+    String? id,
     String? email,
-    String? displayName,
+    String? nickname,
     String? photoUrl,
   }) {
     return UserBriefState(
-      uid: uid ?? this.uid,
+      id: id ?? this.id,
       email: email ?? this.email,
-      displayName: displayName ?? this.displayName,
+      nickname: nickname ?? this.nickname,
       photoUrl: photoUrl ?? this.photoUrl,
+    );
+  }
+
+  factory UserBriefState.initial() {
+    return const UserBriefState(
+      id: '',
+      email: '',
+      nickname: '',
+      photoUrl: '',
     );
   }
 }

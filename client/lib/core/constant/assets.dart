@@ -26,6 +26,7 @@ class Assets {
       'assets/images/thumbnail_paris_image.png';
   static const String thumbnailRomeImage =
       'assets/images/thumbnail_rome_image.png';
+  static const String splashImage = 'assets/images/splash_image.png';
 
   // icons
   static const String homeIcon = 'assets/icons/home_icon.svg';
@@ -38,6 +39,7 @@ class Assets {
   static const String thumbDownIcon = 'assets/icons/thumb_down_icon.svg';
   static const String thumbUpIcon = 'assets/icons/thumb_up_icon.svg';
   static const String iconsGoogleLogo = 'assets/icons/google_logo.svg';
+  static const String appIcon = 'assets/icons/app_icon.svg';
 
   // riv
   static const String walkRive = 'assets/animations/walk.riv';
