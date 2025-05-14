@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:tigo/app/bindings/init_binding.dart';
 import 'package:tigo/app/env/common/environment_factory.dart';
 import 'package:tigo/app/utility/notification_util.dart';
@@ -14,21 +15,32 @@ import 'package:tigo/data/provider/user/user_remote_provider.dart';
 import 'package:tigo/firebase_options.dart';
 import 'package:tigo/main_app.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_vertexai/firebase_vertexai.dart';
 
 void main() async {
   await onInitSystem();
   await onReadySystem();
 
   InitBinding().dependencies();
- FlutterNativeSplash.remove();
   runApp(const MainApp());
 }
+
+Future<void> requestPermissions() async {
+  await Permission.location.request();
+  await Permission.locationAlways.request();
+}
+
 
 Future<void> onInitSystem() async {
   // Widget Binding
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase Initializing
+  // permission
+  await requestPermissions();
+
+  // Environment
+  await dotenv.load(fileName: "assets/config/.env");
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // DateTime Formatting
