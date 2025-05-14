@@ -37,7 +37,6 @@ class ProfileViewModel extends GetxController {
     // TODO: implement onReady
     super.onReady();
 
-    fetchUserBriefState();
   }
 
   @override

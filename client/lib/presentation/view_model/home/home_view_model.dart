@@ -14,15 +14,12 @@ class HomeViewModel extends GetxController {
   /* ------------------------------------------------------ */
   late final Rx<UserBriefState> _userBriefState;
 
-
-
   /* ------------------------------------------------------ */
   /* ----------------- Public Fields ---------------------- */
   /* ------------------------------------------------------ */
   UserBriefState get userBriefState => _userBriefState.value;
 
-
-  void onInit() async{
+  void onInit() async {
     super.onInit();
 
     // Dependency Injection
@@ -31,32 +28,36 @@ class HomeViewModel extends GetxController {
     // Private Fields
     _userBriefState = _userRepository.readUserBriefState().obs;
   }
+
   @override
   void onReady() {
     // TODO: implement onReady
     super.onReady();
 
-    fetchUserBriefState();
+    // fetchUserBriefState();
   }
 
   void fetchUserBriefState() async {
     UserBriefState temp = _userRepository.readUserBriefState();
-    print('debug: fetchUserBriefState: ${temp.toString()}');
+
+    print('SecurityUtil.isSignin: ${SecurityUtil.isSignin}');
 
     if (SecurityUtil.isSignin) {
+      print('here?');
       _userBriefState.value = _userBriefState.value.copyWith(
         id: temp.id,
         email: temp.email,
         nickname: temp.nickname,
         photoUrl: temp.photoUrl,
       );
-      print('debug: fetchUserBriefState: ${_userBriefState.value.toString()}');
+      return;
     } else {
+      print('here again?');
       _userBriefState.value = _userBriefState.value.copyWith(
-        id: '',
-        email: '',
-        nickname: '',
-        photoUrl: '',
+        id: "GUEST",
+        nickname: "GUEST",
+        email: "GUEST",
+        photoUrl: "GUEST",
       );
     }
   }
