@@ -5,13 +5,8 @@ admin.initializeApp({
   locationId: "asia-northeast3",
 });
 
-/* --------------------------------------------------------------------------------------------- */
-/* -------------------------------------- Trigger Functions ------------------------------------ */
-/* --------------------------------------------------------------------------------------------- */
-const db = admin.firestore();
-
 exports.signUp = functions
-  .region("us-central1")
+  .region("asia-northeast3") 
   .auth.user()
   .onCreate((user) => {
     const { uid, displayName, email, photoURL } = user;
