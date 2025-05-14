@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:tigo/app/config/app_routes.dart';
 import 'package:tigo/core/constant/assets.dart';
 import 'package:tigo/core/screen/base_screen.dart';
 import 'package:tigo/presentation/view/home/widget/place_detail_modal.dart';
@@ -70,12 +72,7 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                     iconColor: const Color(0xFF4A90E2),
                     bgColor: const Color(0xFFE7F2FF),
                     onTap: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => const ChatScreen(),
-                      //   ),
-                      // );
+                      Get.toNamed(AppRoutes.TIGO_PLAN_CHAT);
                     },
                   ),
                 ),

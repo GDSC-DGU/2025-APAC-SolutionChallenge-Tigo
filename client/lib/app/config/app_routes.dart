@@ -19,5 +19,5 @@ abstract class AppRoutes {
   static const String TIGO_PLAN_CHAT = '/tigo-plan-chat';
 
   // Tigo 계획표 생성완료 화면
-  static const String TIGO_PLAN_CREATED = '/tigo-plan-created';
+  static const String TIGO_PLAN_COMPLETED = '/tigo-plan-completed';
 }

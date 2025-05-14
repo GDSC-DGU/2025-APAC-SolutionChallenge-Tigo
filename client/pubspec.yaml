@@ -1,6 +1,6 @@
 name: tigo
 description: "Tigo turns your journey into a story using a Gemini-powered live chatbot and expressive Rive animations."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -44,7 +44,6 @@ dependencies:
   # geolocation
   geolocator: ^14.0.0
   geofence_foreground_service: ^1.1.5
-
 
   # permission
   permission_handler: ^12.0.0+1
@@ -101,6 +100,9 @@ dependencies:
   # Extended Nested Scroll View
   extended_nested_scroll_view: ^6.2.1
 
+  # Dotenv
+  flutter_dotenv: ^5.1.0
+
   # Storage
   get_storage: ^2.1.1
   flutter_secure_storage: ^9.2.2
@@ -122,7 +124,7 @@ dependencies:
   cloud_firestore: ^5.6.7
   flutter_local_notifications: ^18.0.1
   flutter_native_splash: ^2.4.6
-
+  dotenv: ^4.2.0
 
 dev_dependencies:
   # Default
@@ -149,7 +151,8 @@ flutter:
     - assets/animations/
     - assets/images/
     - assets/icons/
-
+    - assets/prompts/
+    - assets/config/.env
 
   fonts:
     - family: Pretendard

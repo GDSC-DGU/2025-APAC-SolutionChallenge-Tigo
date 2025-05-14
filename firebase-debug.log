@@ -1,0 +1,23 @@
+[debug] [2025-05-14T01:25:28.426Z] ----------------------------------------------------------------------
+[debug] [2025-05-14T01:25:28.428Z] Command:       /usr/local/bin/node /usr/local/bin/firebase functions:config:get
+[debug] [2025-05-14T01:25:28.429Z] CLI Version:   14.3.1
+[debug] [2025-05-14T01:25:28.429Z] Platform:      darwin
+[debug] [2025-05-14T01:25:28.429Z] Node Version:  v20.9.0
+[debug] [2025-05-14T01:25:28.429Z] Time:          Wed May 14 2025 10:25:28 GMT+0900 (대한민국 표준시)
+[debug] [2025-05-14T01:25:28.429Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-05-14T01:25:28.552Z] Object "" in "firebase.json" has unknown property: {"additionalProperty":"flutter"}
+[debug] [2025-05-14T01:25:28.554Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-14T01:25:28.555Z] > authorizing via signed-in user (rlrlfhtm5@gmail.com)
+[debug] [2025-05-14T01:25:28.555Z] [iam] checking project tigo-ce719 for permissions ["firebase.projects.get","runtimeconfig.configs.get","runtimeconfig.configs.list","runtimeconfig.variables.get","runtimeconfig.variables.list"]
+[debug] [2025-05-14T01:25:28.555Z] Checked if tokens are valid: true, expires at: 1747189060113
+[debug] [2025-05-14T01:25:28.556Z] Checked if tokens are valid: true, expires at: 1747189060113
+[debug] [2025-05-14T01:25:28.556Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/tigo-ce719:testIamPermissions [none]
+[debug] [2025-05-14T01:25:28.556Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/tigo-ce719:testIamPermissions x-goog-quota-user=projects/tigo-ce719
+[debug] [2025-05-14T01:25:28.556Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tigo-ce719:testIamPermissions {"permissions":["firebase.projects.get","runtimeconfig.configs.get","runtimeconfig.configs.list","runtimeconfig.variables.get","runtimeconfig.variables.list"]}
+[debug] [2025-05-14T01:25:29.398Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/tigo-ce719:testIamPermissions 200
+[debug] [2025-05-14T01:25:29.398Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/tigo-ce719:testIamPermissions {"permissions":["firebase.projects.get","runtimeconfig.configs.get","runtimeconfig.configs.list","runtimeconfig.variables.get","runtimeconfig.variables.list"]}
+[debug] [2025-05-14T01:25:29.398Z] Checked if tokens are valid: true, expires at: 1747189060113
+[debug] [2025-05-14T01:25:29.398Z] Checked if tokens are valid: true, expires at: 1747189060113
+[debug] [2025-05-14T01:25:29.398Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/tigo-ce719/services/runtimeconfig.googleapis.com [none]
+[debug] [2025-05-14T01:25:29.398Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/tigo-ce719/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/tigo-ce719

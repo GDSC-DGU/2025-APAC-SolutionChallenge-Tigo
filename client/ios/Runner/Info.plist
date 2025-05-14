@@ -16,6 +16,8 @@
 		<string>client</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
+		<key>GoogleMapKey</key>
+		<string>${GOOGLE_MAP_KEY}</string>
 		<key>CFBundleShortVersionString</key>
 		<string>$(FLUTTER_BUILD_NAME)</string>
 		<key>CFBundleSignature</key>
