@@ -11,7 +11,6 @@ import 'package:tigo/presentation/view_model/home/home_view_model.dart';
 
 class HomeScreen extends BaseScreen<HomeViewModel> {
   const HomeScreen({super.key});
-
   @override
   Widget buildBody(BuildContext context) {
     return Scaffold(
@@ -23,16 +22,26 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
             top: 0,
             left: 0,
             right: 0,
-            height: 360,
-            child: Image.asset(
-              Assets.homeGradientBackgroundImage,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
+            height: 300,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF4DAEFF),
+                    Color(0xFFEFF5FB),
+                  ],
+                ),
+              ),
+              child: CustomPaint(
+                painter: _HighlightPainter(),
+              ),
             ),
           ),
           // Gradient Overlay
           Positioned(
-            top: 420,
+            top: 363,
             left: 0,
             right: 0,
             bottom: 0,
@@ -46,30 +55,29 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
             ),
           ),
           Positioned(
-            top: 300,
+            top: 240,
             left: 24,
             right: 24,
             child: Row(
               children: [
                 Expanded(
                   child: TempPlanCard(
-                    icon: Icons.language,
-                    title: 'My Trips',
-                    date: '2025.05.06',
-                    iconColor: const Color(0xFFF99500),
-                    bgColor: const Color(0xFFFFF0E0),
+                    iconAssetPath: 'assets/images/for_list.png',
+                    title: 'For list',
+                    date: 'Open your travel list',
+                    bgColor: Color(0xFFFFF0E0),
                     onTap: () {},
                   ),
+
                 ),
 
                 const SizedBox(width: 16),
 
                 Expanded(
                   child: TempPlanCard(
-                    icon: Icons.list_alt,
-                    title: 'For Conversation',
-                    date: '2025.05.06',
-                    iconColor: const Color(0xFF4A90E2),
+                    iconAssetPath: 'assets/images/for_conversation.png',
+                    title: ' For Conversation',
+                    date: ' Plan a trip with TIGO',
                     bgColor: const Color(0xFFE7F2FF),
                     onTap: () {
                       Get.toNamed(AppRoutes.TIGO_PLAN_CHAT);
@@ -86,12 +94,12 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 실제 viewModel.userBriefState.photoUrl 사용
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: CachedNetworkImageProvider(
-                    viewModel.userBriefState.photoUrl ?? '',
-                  ),
-                ),
+                // CircleAvatar(
+                //   radius: 24,
+                //   backgroundImage: CachedNetworkImageProvider(
+                //     viewModel.userBriefState.photoUrl ?? '',
+                //   ),
+                // ),
                 const SizedBox(height: 8),
                 Text(
                   'Hi, ${viewModel.userBriefState.nickname}',
@@ -134,8 +142,8 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                     children: [
                       const Icon(
                         Icons.video_call,
-                        color: Colors.grey,
-                        size: 28,
+                        color: Color(0xFFEEEEEE),
+                        size: 20,
                       ),
                       const SizedBox(width: 40),
                       GestureDetector(
@@ -149,8 +157,8 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                         },
                         child: const Icon(
                           Icons.person,
-                          color: Colors.grey,
-                          size: 28,
+                          color: Color(0xFFEEEEEE),
+                          size: 20,
                         ),
                       ),
                     ],
@@ -190,4 +198,40 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
       ),
     );
   }
+}
+
+class _HighlightPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = RadialGradient(
+        center: const Alignment(0.8, -0.6),
+        radius: 1.4,
+        colors: [
+          Colors.white.withOpacity(0.6),
+          Colors.white.withOpacity(0.0),
+        ],
+      ).createShader(Rect.fromCircle(
+        center: Offset(size.width * 0.9, size.height * 0.15),
+        radius: size.width * 1.3,
+      ));
+
+    canvas.save();
+
+    canvas.translate(size.width * 0.8, size.height * 0.15);
+    canvas.rotate(-0.05);
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(1, 0),
+        width: size.width * 1.7,
+        height: size.height * 1.8,
+      ),
+      paint,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

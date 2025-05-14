@@ -230,7 +230,7 @@ $videoListText
   // 일정표 생성 요청 (dialog[] 전체를 서버로 전송)
   Future<String?> requestTripPlan() async {
     final url = Uri.parse(
-      'http://127.0.0.1:5001/${projectId}/us-central1/tripPlan',
+      'https://us-central1-tigo-ce719.cloudfunctions.net/tripPlan-1',
     );
     final userId = 'test1'; // 테스트용 userId
     final body = jsonEncode({'userId': userId});
@@ -262,7 +262,7 @@ $videoListText
   Future<void> sendToGeminiWithDialog(List<Map<String, dynamic>> dialog) async {
     try {
       final url = Uri.parse(
-        'http://127.0.0.1:5001/${projectId}/us-central1/tripPlan',
+        'https://us-central1-tigo-ce719.cloudfunctions.net/tripPlan-1',
       );
       final userId = 'test'; // 테스트용 userId
       final body = jsonEncode({'userId': userId});
@@ -377,7 +377,7 @@ $videoListText
         ],
       },
     ];
-    await sendToGeminiWithDialog(dialog);
+    // await sendToGeminiWithDialog(dialog);
   }
 
   // 최근 N개 메시지를 서버에 임시 저장 (응답은 무시)
@@ -441,7 +441,7 @@ $videoListText
   Future<void> saveLastCycleToServer() async {
     final userId = 'test';
     final url = Uri.parse(
-      'http://127.0.0.1:5001/$projectId/us-central1/saveDialog',
+      'https://us-central1-tigo-ce719.cloudfunctions.net/saveDialog-1',
     );
     if (messages.length < 2) return;
     final lastUser = messages.lastWhere(

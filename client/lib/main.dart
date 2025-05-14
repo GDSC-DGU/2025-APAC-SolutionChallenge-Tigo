@@ -12,12 +12,11 @@ import 'package:tigo/data/factory/remote_storage_factory.dart';
 import 'package:tigo/data/factory/storage_factory.dart';
 import 'package:tigo/data/provider/user/user_local_provider.dart';
 import 'package:tigo/data/provider/user/user_remote_provider.dart';
-import 'package:tigo/firebase_options.dart';
 import 'package:tigo/main_app.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
-
+import 'package:tigo/firebase_options.dart';
 void main() async {
   await onInitSystem();
   await onReadySystem();
