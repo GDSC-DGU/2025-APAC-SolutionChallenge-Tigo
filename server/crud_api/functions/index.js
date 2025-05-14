@@ -45,3 +45,4 @@
 exports.signUp = require("./user_api").signUp;
 exports.tripPlan = require("./trip_plan_api").tripPlan;
 exports.saveDialog = require("./trip_plan_api").saveDialog;
+exports.getTripPlans = require("./trip_plan_api").getTripPlans;
