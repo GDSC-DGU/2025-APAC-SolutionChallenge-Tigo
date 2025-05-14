@@ -16,6 +16,7 @@ class Assets {
   static const String parisBackgroundImage =
       'assets/images/paris_background_image.png';
   static const String romeImage = 'assets/images/rome_image.png';
+  static const String chatTigoImage = 'assets/images/chat_tigo_image.png';
   static const String sanFranciscoImage =
       'assets/images/san_francisco_image.png';
   static const String tigoCharacterImage =
