@@ -6,9 +6,8 @@ const { FieldValue } = require("firebase-admin/firestore");
 const location = "us-central1";
 const model = "gemini-2.0-flash-001";
 const axios = require("axios");
-const project = functions.config().tigo?.project_id || "tigo-ce719";
-const GOOGLE_API_KEY = functions.config().tigo?.google_map_key || "AIzaSyB-75bfOYrWmT1YRAmvSP4_2pc6wq9IeF8";
-
+const project = functions.config().tigo?.project_id;
+const GOOGLE_API_KEY = functions.config().tigo?.google_api_key;
 const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
 if (!admin.apps.length) {
@@ -76,6 +75,23 @@ async function getNextAutoId(counterPath) {
 
   return result.toString(); // Firestore docId는 string
 }
+
+// 5글자 userId로 전체 userId 찾기
+async function getFullUserId(shortId) {
+  const usersRef = db.collection("users");
+  const snap = await usersRef
+    .where("id", ">=", shortId)
+    .where("id", "<", shortId + "\uf8ff")
+    .limit(1)
+
+    .get();
+  if (snap.empty) {
+    throw new Error("userId 매핑 실패: " + shortId);
+  }
+  const doc = snap.docs[0];
+  return doc.id;
+}
+
 exports.tripPlan = functions
   .region(location)
   .runWith({
@@ -83,35 +99,45 @@ exports.tripPlan = functions
     timeoutSeconds: 60,
   })
   .https.onRequest(async (req, res) => {
-    console.log("🔥 tripPlan 함수가 호출되었습니다!");
-
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
       return;
     }
-
-    let { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "userId 누락" });
+    let { userId: shortId, dialogId } = req.body;
+    if (!shortId || !dialogId) {
+      return res.status(400).json({ error: "userId 또는 dialogId 누락" });
     }
-
-    const messagesRef = db
+    let userId;
+    try {
+      userId = await getFullUserId(shortId);
+    } catch (e) {
+      return res.status(404).json({ error: e.message });
+    }
+    const dialogRef = db
+      .collection("users")
+      .doc(shortId)
       .collection("dialogs")
-      .doc(userId)
-      .collection("messages");
+      .doc(dialogId);
+    const dialogDoc = await dialogRef.get();
+    if (!dialogDoc.exists) {
+      return res.status(404).json({ error: "대화방이 없습니다." });
+    }
+    const dialogData = dialogDoc.data();
 
-    const snapshot = await messagesRef.orderBy("createdAt").get();
-    const dialogDocs = snapshot.docs;
-
-    if (!dialogDocs.length) {
+    if (!dialogData.createdAt) {
+    }
+    const messagesRef = dialogDoc.ref.collection("messages");
+    if (!snapshot.size) {
       return res.status(404).json({ error: "대화가 없습니다." });
     }
-
-    const dialog = dialogDocs.flatMap(doc => doc.data().dialog || []);
-    const dialogCount = dialog.length;
+    const dialogDocs = snapshot.docs;
+    const dialog = dialogDocs.map((doc) => doc.data());
 
     const dialogText = dialog
-      .map((msg) => `${msg.role === "assistant" ? "model" : "user"}: ${msg.content}`)
+      .map(
+        (msg) =>
+          `${msg.role === "assistant" ? "model" : "user"}: ${msg.content}`
+      )
       .join("\n");
 
     const systemPrompt = `
@@ -170,7 +196,9 @@ ${dialogText}
     ];
 
     try {
-      const auth = new GoogleAuth({ scopes: "https://www.googleapis.com/auth/cloud-platform" });
+      const auth = new GoogleAuth({
+        scopes: "https://www.googleapis.com/auth/cloud-platform",
+      });
       const client = await auth.getClient();
       const accessToken = await client.getAccessToken();
 
@@ -192,7 +220,10 @@ ${dialogText}
       });
 
       const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || data.candidates?.[0]?.content?.text || JSON.stringify(data);
+      const text =
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        data.candidates?.[0]?.content?.text ||
+        JSON.stringify(data);
       const cleanText = stripCodeBlock(text);
 
       let schedules = [];
@@ -208,82 +239,148 @@ ${dialogText}
       }
 
       const createdAt = new Date().toISOString();
-      const enriched = (await enrichAllSchedules(schedules)).map((spot) => ({ ...spot, createdAt }));
+      const enriched = (await enrichAllSchedules(schedules)).map((spot) => ({
+        ...spot,
+        createdAt,
+      }));
 
-      const counterPath = db.collection("tripPlans").doc(userId).collection("meta").doc("counter");
+      const counterPath = db
+        .collection("tripPlans")
+        .doc(shortId)
+        .collection("meta")
+        .doc("counter");
       const planId = await getNextAutoId(counterPath);
 
-      await db.collection("tripPlans").doc(userId).collection("plans").doc(planId).set({
-        userId,
-        createdAt,
-        schedules: enriched,
-      });
-
+      await db
+        .collection("tripPlans")
+        .doc(shortId)
+        .collection("plans")
+        .doc(planId)
+        .set({
+          userId: shortId,
+          createdAt,
+          schedules: enriched,
+        });
       const firstSpot = enriched[0] || {};
       const firstLocation = firstSpot.local || "알 수 없음";
       const firstThumbnail = firstSpot.thumbnail || "";
+      // 플랜 요약 정보 생성
+      const planName = `${firstLocation} ${
+        [...new Set(enriched.map((s) => s.date))].length
+      }일 여행`;
+      const planThumbnailImage = firstThumbnail;
+      const days = [...new Set(enriched.map((s) => s.date))].length;
+      const mainSpots = enriched.slice(0, 3).map((s) => s.place);
 
-      const latestDialogSnap = await messagesRef.orderBy("createdAt", "desc").limit(1).get();
-      if (latestDialogSnap.empty) {
-        return res.status(404).json({ error: "대화가 없습니다." });
-      }
+      // users/{userId}/plans/{planId}에 요약 정보 저장
+      await db
+        .collection("users")
+        .doc(shortId)
+        .collection("plans")
+        .doc(planId)
+        .set({
+          planId,
+          planName,
+          planThumbnailImage,
+          createdAt,
+          location: firstLocation,
+          days,
+          mainSpots,
+          dialogId,
+        });
 
-      const doc = latestDialogSnap.docs[0];
-      const dialogId = doc.id;
+      // 기존 대화방에도 플랜 정보 저장 (겸용)
+      await db
+        .collection("users")
+        .doc(userId)
+        .collection("dialogs")
+        .doc(dialogId)
+        .set(
+          {
+            userId: shortId,
+            planId,
+            location: firstLocation,
+            thumbnail: firstThumbnail,
+            createdAt,
+          },
+          { merge: true }
+        );
 
-      await db.collection("dialogs").doc(userId).collection("messages").doc(dialogId).set({
-        userId,
-        planId,
-        location: firstLocation,
-        thumbnail: firstThumbnail,
-        createdAt,
-      }, { merge: true });
-
-      res.json({ success: true, planId, schedules: enriched });
+      const responseData = { success: true, planId, schedules: enriched };
+      res.json(responseData);
     } catch (e) {
       console.error("에러 발생:", e);
       res.status(500).json({ error: e.toString() });
     }
   });
 
-
-
-exports.saveDialog = functions
+// 대화 세션(방) 생성
+exports.createDialog = functions
   .region(location)
   .https.onRequest(async (req, res) => {
     if (req.method !== "POST") {
       return res.status(405).send("Method Not Allowed");
     }
-
-    let { userId, dialog } = req.body;
-    if (!userId || !dialog || !Array.isArray(dialog)) {
-      return res.status(400).json({ error: "userId 또는 dialog 파라미터 누락" });
+    let { userId: shortId, dialog } = req.body;
+    if (!shortId || !dialog || !Array.isArray(dialog)) {
+      return res
+        .status(400)
+        .json({ error: "userId 또는 dialog 파라미터 누락" });
     }
-
-    // 🔹 대화 ID 생성용 카운터 (userId 기준으로)
+    let userId;
+    try {
+      userId = await getFullUserId(shortId);
+    } catch (e) {
+      return res.status(404).json({ error: e.message });
+    }
+    // 대화방 생성
     const dialogCounterPath = db
-      .collection("dialogs")
+      .collection("users")
       .doc(userId)
       .collection("meta")
       .doc("counter");
-
     const dialogId = await getNextAutoId(dialogCounterPath);
-
-    // 🔹 대화 저장: dialog/{userId}/messages/{dialogId}
     const dialogRef = db
+      .collection("users")
+      .doc(shortId)
       .collection("dialogs")
-      .doc(userId)
-      .collection("messages")
       .doc(dialogId);
+    await dialogRef.set({ createdAt: new Date().toISOString() });
 
-    await dialogRef.set({
-      dialog,
-      createdAt: new Date().toISOString()
-    });
+    // 첫 메시지들 저장
+    const messagesRef = dialogRef.collection("messages");
+    for (const msg of dialog) {
+      const msgData = { ...msg, createdAt: new Date().toISOString() };
+      const msgDoc = await messagesRef.add(msgData);
+    }
 
     res.json({ success: true, userId, dialogId });
   });
 
+// 메시지 저장
+exports.saveMessage = functions
+  .region(location)
+  .https.onRequest(async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
+    const { userId: shortId, dialogId, message } = req.body;
+    if (!shortId || !dialogId || !message) {
+      return res.status(400).json({ error: "파라미터 누락" });
+    }
+    const userId = await getFullUserId(shortId);
+    const messagesRef = db
+      .collection("users")
+      .doc(shortId)
+      .collection("dialogs")
+      .doc(dialogId)
+      .collection("messages");
+    const msgDoc = await messagesRef.add({
+      ...message,
+      createdAt: new Date().toISOString(),
+    });
+    res.json({ success: true, userId, dialogId, messageId: msgDoc.id });
+  });
 
 async function searchPlace(placeName) {
   const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
@@ -301,7 +398,6 @@ async function getPlaceDetails(placeId) {
 function getPhotoUrl(photoReference) {
   return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_API_KEY}`;
 }
-
 async function enrichSchedule(schedule) {
   const placeId = await searchPlace(schedule.place);
   if (!placeId) return { ...schedule, error: "장소 검색 실패" };
