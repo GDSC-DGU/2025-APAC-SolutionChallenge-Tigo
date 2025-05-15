@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TigoPlanChatScreen extends BaseScreen<TigoPlanChatViewModel> {
   const TigoPlanChatScreen({super.key});
@@ -36,13 +37,12 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final vm = Get.find<TigoPlanChatViewModel>();
       if (vm.messages.isEmpty) {
-        // 첫 질문(프롬프트)을 Gemini가 아니라 클라에서 강제로 추가
-        vm.messages.add(
-          ChatMessage(
-            text:
-                "현재 당신의 여행 계획 중 정해진 부분을 자유롭게 입력해주세요~\nex) 5월 말에 친구 6명이랑 서울로 여행을 갈 계획이야.",
-            isUser: false,
-          ),
+        // Firestore 기반 대화방 생성 및 실시간 리스닝 시작
+        await vm.startNewDialog();
+        // 첫 질문(프롬프트)을 Firestore에 저장
+        await vm.addMessage(
+          "현재 당신의 여행 계획 중 정해진 부분을 자유롭게 입력해주세요~\nex) 5월 말에 친구 6명이랑 서울로 여행을 갈 계획이야.",
+          isUser: false,
         );
       }
     });
@@ -61,17 +61,14 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     if (text.isEmpty) return;
     _controller.clear();
 
-    // 유저 메시지 추가
-    vm.messages.add(ChatMessage(text: text, isUser: true));
+    // Firestore에 유저 메시지 저장
+    await vm.addMessage(text, isUser: true);
 
     // Gemini에 user 메시지 전달 → 답변 받기
     final geminiAnswer = await vm.callGeminiApi(text);
 
-    // Gemini 답변 메시지 추가
-    vm.messages.add(ChatMessage(text: geminiAnswer, isUser: false));
-
-    // **여기서 1cycle 서버에 저장**
-    await vm.saveLastCycleToServer();
+    // Firestore에 Gemini 답변 저장
+    await vm.addMessage(geminiAnswer, isUser: false);
   }
 
   void _requestTripPlan() async {
@@ -79,7 +76,8 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     final result = await vm.requestTripPlan();
     if (result != null) {
       print('result: $result');
-      vm.messages.add(ChatMessage(text: '[여행 일정표]\n$result', isUser: false));
+      // Firestore에 일정표 요약 메시지 저장(옵션)
+      await vm.addMessage('[여행 일정표]\n$result', isUser: false);
     }
   }
 
@@ -344,6 +342,48 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
               ),
             ],
           ),
+    );
+  }
+}
+
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  final bool isTimetable;
+  final bool isLoading;
+  final String? videoUrl;
+  final String? videoTitle;
+  final String? videoSummary;
+  final String? thumbnailUrl;
+
+  const ChatMessage({
+    required this.text,
+    required this.isUser,
+    required this.isTimetable,
+    required this.isLoading,
+    required this.videoUrl,
+    required this.videoTitle,
+    required this.videoSummary,
+    required this.thumbnailUrl,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    bool safeBool(dynamic v, [bool fallback = false]) {
+      if (v is bool) return v;
+      if (v is int) return v != 0;
+      if (v is String) return v.toLowerCase() == 'true';
+      return fallback;
+    }
+
+    return ChatMessage(
+      text: json['text'] ?? '',
+      isUser: safeBool(json['isUser']),
+      isTimetable: safeBool(json['isTimetable']),
+      isLoading: safeBool(json['isLoading']),
+      videoUrl: json['videoUrl'],
+      videoTitle: json['videoTitle'],
+      videoSummary: json['videoSummary'],
+      thumbnailUrl: json['thumbnailUrl'],
     );
   }
 }
