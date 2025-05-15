@@ -48,7 +48,7 @@ class SignOutDialog extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onConfirm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: const Color(0xFF90CFFF),
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Logout'),
@@ -79,7 +79,7 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        //leading: const BackButton(color: Colors.black),
         centerTitle: true,
         title: const Text(
           "My Page",
@@ -185,26 +185,26 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    // Location access agreement
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Location access agreement",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Obx(
-                          () => Switch(
-                            value: locationAgreed.value,
-                            onChanged: (v) => locationAgreed.value = v,
-                          ),
-                        ),
-                      ],
-                    ),
+                    //const SizedBox(height: 16),
+                    //// Location access agreement
+                    //Row(
+                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //children: [
+                       //const Text(
+                          //"Location access agreement",
+                          //style: TextStyle(
+                           // fontSize: 15,
+                           // fontWeight: FontWeight.w500,
+                          //),
+                        //),
+                        //Obx(
+                         // () => Switch(
+                         //   value: locationAgreed.value,
+                          //  onChanged: (v) => locationAgreed.value = v,
+                         // ),
+                        //),
+                      //],
+                    //),
                   ],
                 ),
               ),
@@ -226,7 +226,7 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
                       SignOutDialog(
                         onConfirm: () {
                           // 로그아웃 로직 실행
-                          viewModel.signOut(); // 실제 구현 필요
+                         //viewModel.signOut(); // 실제 구현 필요
                           _showSnackBar('로그아웃 완료', '로그아웃이 완료되었습니다.');
                         },
                         onCancel: () {

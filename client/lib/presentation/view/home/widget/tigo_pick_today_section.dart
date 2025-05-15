@@ -72,7 +72,7 @@ class _TigoPickTodaySectionState extends State<TigoPickTodaySection> {
                 child: const Text(
                   "About this place?",
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: Colors.grey,
                     decoration: TextDecoration.underline,
                   ),

@@ -22,7 +22,7 @@ abstract class AppPages {
       name: AppRoutes.ROOT,
       page: () => const RootScreen(),
       bindings: [RootBinding()],
-      middlewares: [LoginMiddleware()],
+   //   middlewares: [LoginMiddleware()],
     ),
     GetPage(
       name: AppRoutes.TIGO_PLAN_CHAT,
