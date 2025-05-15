@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class QuickPlanTestScreen extends StatefulWidget {
-  final List<Map<String, dynamic>>? planList; // nullable로 변경
+  final List<Map<String, dynamic>>? planList;
 
   const QuickPlanTestScreen({super.key, this.planList});
 
@@ -17,9 +17,15 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
   @override
   void initState() {
     super.initState();
-    // null 또는 빈 배열 처리
     final list = widget.planList ?? [];
-    dates = list.map((e) => e['date'] as String).toSet().toList();
+    // 날짜 중복 제거 + 정렬
+    dates =
+        list
+            .map((e) => e['date'] as String? ?? '')
+            .where((d) => d.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     selectedDate = dates.isNotEmpty ? dates.first : '';
   }
 
@@ -40,8 +46,18 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                     : GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: LatLng(
-                          spots.first['latitude'] ?? 37.5665,
-                          spots.first['longitude'] ?? 126.9780,
+                          (spots.first['latitude'] is num
+                                  ? spots.first['latitude']
+                                  : double.tryParse(
+                                    '${spots.first['latitude']}',
+                                  )) ??
+                              37.5665,
+                          (spots.first['longitude'] is num
+                                  ? spots.first['longitude']
+                                  : double.tryParse(
+                                    '${spots.first['longitude']}',
+                                  )) ??
+                              126.9780,
                         ),
                         zoom: 13,
                       ),
@@ -56,10 +72,22 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                 (s) => Marker(
                                   markerId: MarkerId(s['place'] ?? ''),
                                   position: LatLng(
-                                    s['latitude'],
-                                    s['longitude'],
+                                    (s['latitude'] is num
+                                            ? s['latitude']
+                                            : double.tryParse(
+                                              '${s['latitude']}',
+                                            )) ??
+                                        37.5665,
+                                    (s['longitude'] is num
+                                            ? s['longitude']
+                                            : double.tryParse(
+                                              '${s['longitude']}',
+                                            )) ??
+                                        126.9780,
                                   ),
-                                  infoWindow: InfoWindow(title: s['place']),
+                                  infoWindow: InfoWindow(
+                                    title: s['place'] ?? '',
+                                  ),
                                 ),
                               )
                               .toSet(),
@@ -102,7 +130,8 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (spot['thumbnail'] != null)
+                                if (spot['thumbnail'] != null &&
+                                    (spot['thumbnail'] as String).isNotEmpty)
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Image.network(
@@ -157,7 +186,9 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                       if (spot['phone'] != null)
                                         Text('전화: ${spot['phone']}'),
                                       if (spot['website'] != null &&
-                                          spot['website'] != "undefined")
+                                          spot['website'] != "undefined" &&
+                                          (spot['website'] as String)
+                                              .isNotEmpty)
                                         Text('웹사이트: ${spot['website']}'),
                                     ],
                                   ),
