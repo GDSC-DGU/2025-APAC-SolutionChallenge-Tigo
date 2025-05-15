@@ -16,6 +16,7 @@ import 'package:rxdart/rxdart.dart';
 class TigoPlanChatViewModel extends GetxController {
   final RxList<ChatMessage> messages = <ChatMessage>[].obs;
   final RxBool isLoading = false.obs;
+  final RxBool isEnableGreyBarrier = false.obs;
   String? currentDialogId;
   StreamSubscription? _messagesSub;
 
@@ -77,11 +78,37 @@ class TigoPlanChatViewModel extends GetxController {
 
   // 플랜 생성
   Future<List<Map<String, dynamic>>> requestTripPlan() async {
-    if (currentDialogId == null) throw Exception('대화방이 없습니다.');
+    if (currentDialogId == null) {
+      print('[ERROR] requestTripPlan: currentDialogId가 null입니다. 대화방을 새로 만듭니다.');
+      await startNewDialog();
+      if (currentDialogId == null) {
+        print('[FATAL] 대화방 생성 실패! Firestore/네트워크 문제?');
+        messages.add(ChatMessage(text: '대화방 생성 실패', isUser: false));
+        return [];
+      }
+    }
+    print('[DEBUG] requestTripPlan: userId=$userId, dialogId=$currentDialogId');
+    // Firestore에 dialogs 문서가 실제로 있는지 확인
+    final dialogDoc =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('dialogs')
+            .doc(currentDialogId)
+            .get();
+    if (!dialogDoc.exists) {
+      print(
+        '[ERROR] Firestore에 dialogs 문서가 없음! userId=$userId, dialogId=$currentDialogId',
+      );
+      await startNewDialog();
+      return [];
+    }
+    print('[DEBUG] Firestore dialogs 문서: ${dialogDoc.data()}');
+
     final url = Uri.parse(
       'http://127.0.0.1:5001/$projectId/us-central1/tripPlan',
     );
-    final body = jsonEncode({'userId': userId});
+    final body = jsonEncode({'userId': userId, 'dialogId': currentDialogId});
     print('[DEBUG] 플랜 생성 요청: userId=$userId, dialogId=$currentDialogId');
     final response = await http.post(
       url,
@@ -348,7 +375,11 @@ $videoListText
       {'role': 'assistant', 'content': lastAssistant.text},
       {'role': 'user', 'content': lastUser.text},
     ];
-    final body = jsonEncode({'userId': userId, 'dialog': dialog});
+    final body = jsonEncode({
+      'userId': userId,
+      'dialogId': currentDialogId,
+      'dialog': dialog,
+    });
     try {
       print('DEBUG] 서버에 저장되는 유저 id : $userId');
       print("[DEBUG] 서버에 저장되는 대화 내용: $dialog");
@@ -376,6 +407,92 @@ $videoListText
       'createdAt': DateTime.now().toIso8601String(),
       // 필요시 추가 필드
     });
+  }
+
+  // Gemini API 호출용 프롬프트 생성 함수
+  Future<String> buildGeminiPromptWithHistory(
+    List<ChatMessage> messages,
+  ) async {
+    // 1. 프롬프트 파일 읽기
+    final prompt = await rootBundle.loadString(
+      'assets/prompts/travel_recommend_prompt.md',
+    );
+
+    // 2. Firestore에서 불러온 messages를 role별로 변환
+    final history = messages
+        .map((m) {
+          final role = m.isUser ? 'user' : 'assistant';
+          return '$role: [33m${m.text}[0m';
+        })
+        .join('\n');
+
+    print('==== [Gemini 프롬프트] travel_recommend_prompt.md ====');
+    print(prompt);
+    print('==== [Gemini 대화 히스토리] ====');
+    print(history);
+
+    // 3. 최종 프롬프트 조합
+    final fullPrompt = '$prompt\n\n[대화 내역]\n$history\n';
+    print('==== [Gemini 최종 프롬프트] ====');
+    print(fullPrompt);
+    return fullPrompt;
+  }
+
+  // Gemini API 호출 시 사용 예시
+  Future<String> callGeminiWithHistory(
+    List<ChatMessage> messages,
+    String userInput,
+  ) async {
+    // 만약 messages 마지막이 이미 userInput이면, 중복 추가하지 않음
+    List<ChatMessage> history = List.from(messages);
+    if (history.isEmpty ||
+        history.last.text != userInput ||
+        !history.last.isUser) {
+      history.add(ChatMessage(text: userInput, isUser: true));
+    }
+
+    print('==== [Gemini 호출] userInput ====');
+    print(userInput);
+    print('==== [Gemini 호출] history.length: ${history.length} ====');
+    for (var i = 0; i < history.length; i++) {
+      print(
+        '  [${i + 1}] ${history[i].isUser ? 'user' : 'assistant'}: ${history[i].text}',
+      );
+    }
+
+    final fullPrompt = await buildGeminiPromptWithHistory(history);
+
+    final url = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$geminiApiKey',
+    );
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "contents": [
+          {
+            "parts": [
+              {"text": fullPrompt},
+            ],
+          },
+        ],
+      }),
+    );
+
+    print('==== [Gemini API 응답 status] ${response.statusCode} ====');
+    print('==== [Gemini API 응답 body] ====');
+    print(response.body);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+      if (text == null) throw Exception('Gemini 응답 파싱 실패');
+      print('==== [Gemini 최종 응답 텍스트] ====');
+      print(text);
+      return text;
+    } else {
+      throw Exception('Gemini API 호출 실패: ${response.body}');
+    }
   }
 }
 
@@ -406,6 +523,7 @@ class ChatMessage {
       if (v is String) return v.toLowerCase() == 'true';
       return fallback;
     }
+
     return ChatMessage(
       text: json['text'] ?? '',
       isUser: safeBool(json['isUser']),
@@ -485,4 +603,15 @@ List<Map<String, dynamic>> safeParsePlanList(dynamic result) {
   }
   // 그 외 타입은 빈 리스트 반환
   return [];
+}
+
+void _requestTripPlan() async {
+  final vm = Get.find<TigoPlanChatViewModel>();
+  vm.isEnableGreyBarrier.value = true; // 오버레이 ON
+  final result = await vm.requestTripPlan();
+  vm.isEnableGreyBarrier.value = false; // 오버레이 OFF
+  if (result != null) {
+    print('result: $result');
+    await vm.addMessage('[여행 일정표]\n$result', isUser: false);
+  }
 }
