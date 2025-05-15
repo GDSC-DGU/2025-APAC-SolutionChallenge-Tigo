@@ -58,7 +58,9 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                     date: '2025.05.06',
                     iconColor: const Color(0xFFF99500),
                     bgColor: const Color(0xFFFFF0E0),
-                    onTap: () {},
+                    onTap: () {
+                      Get.toNamed(AppRoutes.PLAN_LIST);
+                    },
                   ),
                 ),
 
@@ -86,12 +88,12 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 실제 viewModel.userBriefState.photoUrl 사용
-                CircleAvatar(
-                  radius: 24,
-                  backgroundImage: CachedNetworkImageProvider(
-                    viewModel.userBriefState.photoUrl ?? '',
-                  ),
-                ),
+                // CircleAvatar(
+                //   radius: 24,
+                //   backgroundImage: CachedNetworkImageProvider(
+                //     viewModel.userBriefState.photoUrl ?? '',
+                //   ),
+                // ),
                 const SizedBox(height: 8),
                 Text(
                   'Hi, ${viewModel.userBriefState.nickname}',
