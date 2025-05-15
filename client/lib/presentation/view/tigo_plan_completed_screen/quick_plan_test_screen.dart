@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
+import 'package:tigo/app/config/app_routes.dart';
 import 'package:tigo/presentation/view_model/home/home_view_model.dart';
 
 class QuickPlanTestScreen extends StatefulWidget {
   final String? planId;
+  final String? userId;
   final List<Map<String, dynamic>>? planList;
 
-  const QuickPlanTestScreen({super.key, this.planId, this.planList});
+  const QuickPlanTestScreen({
+    super.key,
+    this.planId,
+    this.userId,
+    this.planList,
+  });
 
   @override
   State<QuickPlanTestScreen> createState() => _QuickPlanTestScreenState();
@@ -20,14 +27,19 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
   List<Map<String, dynamic>>? _planList;
   bool _isLoading = false;
   String? _error;
-  late final HomeViewModel _homeViewModel;
+  String? _userId;
 
   @override
   void initState() {
     super.initState();
-    _homeViewModel = Get.find<HomeViewModel>();
-    if (widget.planList != null) {
-      _setPlanList(widget.planList!);
+
+    // arguments에서 값 추출
+    final args = Get.arguments as Map<String, dynamic>?;
+    _planList = args?['planList']?.cast<Map<String, dynamic>>();
+    _userId = args?['userId'];
+
+    if (_planList != null) {
+      _setPlanList(_planList!);
     } else if (widget.planId != null) {
       _fetchPlanById(widget.planId!);
     } else {
@@ -44,7 +56,7 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
     });
     try {
       // userId를 HomeViewModel에서 가져옴
-      final userId = _homeViewModel.userBriefState.id;
+      final userId = widget.userId;
       final doc =
           await FirebaseFirestore.instance
               .collection('tripPlans')
@@ -102,8 +114,23 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
     final spots = list.where((e) => e['date'] == selectedDate).toList();
 
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // 뒤로가기 시 ROOT로 이동
+            Get.offAllNamed(AppRoutes.ROOT);
+          },
+        ),
+        title: const Text('여행 플랜 결과'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
       body: Column(
         children: [
+
           // 상단 지도
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.3,
@@ -206,6 +233,23 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                       width: 64,
                                       height: 64,
                                       fit: BoxFit.cover,
+                                      errorBuilder: (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+                                        // 이미지 로딩 실패 시 기본 이미지 또는 아이콘 표시
+                                        return Container(
+                                          width: 64,
+                                          height: 64,
+                                          color: Colors.grey[300],
+                                          child: const Icon(
+                                            Icons.broken_image,
+                                            color: Colors.grey,
+                                            size: 32,
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 const SizedBox(width: 12),

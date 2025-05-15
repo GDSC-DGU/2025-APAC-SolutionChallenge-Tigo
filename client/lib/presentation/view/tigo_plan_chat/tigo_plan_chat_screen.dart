@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:tigo/app/config/app_routes.dart';
 import 'package:tigo/core/constant/assets.dart';
 import 'package:tigo/core/screen/base_screen.dart';
 import 'package:tigo/presentation/view_model/tigo_plan_chat/tigo_plan_chat_view_model.dart';
@@ -18,17 +19,7 @@ class TigoPlanChatScreen extends BaseScreen<TigoPlanChatViewModel> {
 
   @override
   Widget buildBody(BuildContext context) {
-    return Stack(
-      children: [
-        _TigoPlanChatScreenBody(),
-        Obx(
-          () =>
-              Get.find<TigoPlanChatViewModel>().isEnableGreyBarrier.value
-                  ? OverlayGreyBarrier()
-                  : SizedBox.shrink(),
-        ),
-      ],
-    );
+    return _TigoPlanChatScreenBody();
   }
 }
 
@@ -113,53 +104,52 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     if (text.isEmpty) return;
     _controller.clear();
 
-
     setState(() {
       userQuestionCount++;
     });
 
+    // Firestore에 유저 메시지 저장
+    await vm.addMessage(text, isUser: true);
+
+    // Gemini 답변 받아오기
+    final geminiAnswer = await vm.callGeminiWithHistory(vm.messages, text);
+
+    // 1. 답변을 바로 messages에 추가 (isTypingMessage: true로 구분)
+    final typingMsg = ChatMessage(text: "", isUser: false);
     setState(() {
       animatedText = "";
       currentTypingIndex = 0;
       isTyping = true;
-      vm.messages.add(ChatMessage(text: geminiAnswer, isUser: false));
+      vm.messages.add(typingMsg); // 임시 메시지 추가
     });
 
+    // 2. 타이핑 애니메이션 시작
     typingTimer?.cancel();
     typingTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       if (currentTypingIndex < geminiAnswer.length) {
         setState(() {
           animatedText += geminiAnswer[currentTypingIndex];
           currentTypingIndex++;
+          // 현재 타이핑 중인 메시지의 text를 업데이트
+          vm.messages[vm.messages.length - 1] = ChatMessage(
+            text: animatedText,
+            isUser: false,
+          );
         });
       } else {
         timer.cancel();
         setState(() {
           isTyping = false;
+          // 마지막 메시지를 최종 답변으로 교체
+          vm.messages[vm.messages.length - 1] = ChatMessage(
+            text: geminiAnswer,
+            isUser: false,
+          );
         });
-
-        // 🔹 타이핑 애니메이션 끝난 뒤 서버 저장
-        vm.saveLastCycleToServer();
+        // 3. Firestore에 Gemini 답변 저장
+        vm.addMessage(geminiAnswer, isUser: false);
       }
     });
-    // Firestore에 유저 메시지 저장
-    await vm.addMessage(text, isUser: true);
-
-    // Gemini에 누적 대화와 user 메시지 전달 → 답변 받기
-    final geminiAnswer = await vm.callGeminiWithHistory(vm.messages, text);
-
-    // Firestore에 Gemini 답변 저장
-    await vm.addMessage(geminiAnswer, isUser: false);
-  }
-
-  void _requestTripPlan() async {
-    final vm = Get.find<TigoPlanChatViewModel>();
-    final result = await vm.requestTripPlan();
-    if (result != null) {
-      print('result: $result');
-      // Firestore에 일정표 요약 메시지 저장(옵션)
-      await vm.addMessage('[여행 일정표]\n$result', isUser: false);
-    }
   }
 
   void _playYoutube(String videoUrl) {
@@ -336,8 +326,8 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                   ),
                                   child: IconButton(
                                     onPressed:
-                                        userQuestionCount >= 5
-                                            ? _requestTripPlan
+                                        userQuestionCount >= 2
+                                            ? vm.requestTripPlan
                                             : null,
                                     icon: const Icon(
                                       Icons.edit,
@@ -708,7 +698,7 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                         child: TextField(
                                           controller: _controller,
                                           decoration: const InputDecoration(
-                                            hintText: "Let’s make a plan…..",
+                                            hintText: "Let's make a plan…..",
                                             border: InputBorder.none,
                                             filled: true,
                                             fillColor: Colors.white,
@@ -739,7 +729,8 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: IconButton(
-                                  onPressed: _requestTripPlan,
+                                  onPressed: vm.requestTripPlan,
+
                                   icon: const Icon(
                                     Icons.mic,
                                     color: Colors.white,
@@ -752,16 +743,12 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-        ),
-        Obx(
-          () =>
-              Get.find<TigoPlanChatViewModel>().isEnableGreyBarrier.value
-                  ? OverlayGreyBarrier()
-                  : SizedBox.shrink(),
-        ),
-      ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

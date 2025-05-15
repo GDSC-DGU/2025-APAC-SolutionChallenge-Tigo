@@ -25,6 +25,8 @@ class TigoPlanChatViewModel extends GetxController {
 
   // 대화방 생성
   Future<void> startNewDialog() async {
+
+    print('userId in startDialog: $userId');
     final dialogsRef = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -77,56 +79,51 @@ class TigoPlanChatViewModel extends GetxController {
   }
 
   // 플랜 생성
-  Future<List<Map<String, dynamic>>> requestTripPlan() async {
-    if (currentDialogId == null) {
-      print('[ERROR] requestTripPlan: currentDialogId가 null입니다. 대화방을 새로 만듭니다.');
-      await startNewDialog();
-      if (currentDialogId == null) {
-        print('[FATAL] 대화방 생성 실패! Firestore/네트워크 문제?');
-        messages.add(ChatMessage(text: '대화방 생성 실패', isUser: false));
-        return [];
-      }
-    }
-    print('[DEBUG] requestTripPlan: userId=$userId, dialogId=$currentDialogId');
-    // Firestore에 dialogs 문서가 실제로 있는지 확인
-    final dialogDoc =
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .collection('dialogs')
-            .doc(currentDialogId)
-            .get();
-    if (!dialogDoc.exists) {
-      print(
-        '[ERROR] Firestore에 dialogs 문서가 없음! userId=$userId, dialogId=$currentDialogId',
-      );
-      await startNewDialog();
-      return [];
-    }
-    print('[DEBUG] Firestore dialogs 문서: ${dialogDoc.data()}');
+  Future<void> requestTripPlan() async {
+    // 1. 로딩 스크린으로 이동 (요청과 로직은 해당 화면이 담당)
+    // Get.offAllNamed(AppRoutes.TIGO_PLAN_CREATING, arguments: userId);
+    print('userId in request TripPlan: ${userId}');
+    Get.toNamed(AppRoutes.TIGO_PLAN_CREATING, arguments: {'userId': userId});
 
-    final url = Uri.parse('${apiBaseUrl}/$projectId/us-central1/tripPlan');
-    final body = jsonEncode({'userId': userId, 'dialogId': currentDialogId});
-    print('[DEBUG] 플랜 생성 요청: userId=$userId, dialogId=$currentDialogId');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
-    print(
-      '[DEBUG] 플랜 생성 응답: status=${response.statusCode}, body=${response.body}',
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final planList = safeParsePlanList(data['schedules']);
-      print('[DEBUG] 받은 일정 데이터: $planList');
-      Get.to(() => QuickPlanTestScreen(planList: planList));
-      return planList;
-    } else {
-      messages.add(ChatMessage(text: '여행 계획표 생성 실패', isUser: false));
-      return [];
-    }
   }
+  // Future<List<Map<String, dynamic>>> requestTripPlan() async {
+  //   // Firestore에 dialogs 문서가 실제로 있는지 확인
+  //   final dialogDoc =
+  //       await FirebaseFirestore.instance
+  //           .collection('users')
+  //           .doc(userId)
+  //           .collection('dialogs')
+  //           .doc(currentDialogId)
+  //           .get();
+  //   if (!dialogDoc.exists) {
+  //     await startNewDialog();
+  //     return [];
+  //   }
+  //
+  //   // 1. 로딩 스크린으로 이동
+  //   Get.offAllNamed(AppRoutes.TIGO_PLAN_CREATING, arguments: userId);
+  //
+  //   final url = Uri.parse('${apiBaseUrl}/tripPlan');
+  //   final body = jsonEncode({'userId': userId, 'dialogId': currentDialogId});
+  //   final response = await http.post(
+  //     url,
+  //     headers: {'Content-Type': 'application/json'},
+  //     body: body,
+  //   );
+  //
+  //   if (response.statusCode == 200) {
+  //     final data = jsonDecode(response.body);
+  //     final planList = safeParsePlanList(data['schedules']);
+  //     // 2. 플랜 결과 화면으로 이동
+  //     Get.offAll(() => QuickPlanTestScreen(planList: planList));
+  //     return planList;
+  //   } else {
+  //     messages.add(ChatMessage(text: '여행 계획표 생성 실패', isUser: false));
+  //     // 실패 시에도 로딩 화면에서 벗어나고 싶으면 아래처럼 처리
+  //     Get.offAllNamed('/errorScreen'); // 또는 적절한 에러 처리
+  //     return [];
+  //   }
+  // }
 
   @override
   void onClose() {
@@ -550,15 +547,4 @@ List<Map<String, dynamic>> safeParsePlanList(dynamic result) {
   }
   // 그 외 타입은 빈 리스트 반환
   return [];
-}
-
-void _requestTripPlan() async {
-  final vm = Get.find<TigoPlanChatViewModel>();
-  vm.isEnableGreyBarrier.value = true; // 오버레이 ON
-  final result = await vm.requestTripPlan();
-  vm.isEnableGreyBarrier.value = false; // 오버레이 OFF
-  if (result != null) {
-    print('result: $result');
-    await vm.addMessage('[여행 일정표]\n$result', isUser: false);
-  }
 }

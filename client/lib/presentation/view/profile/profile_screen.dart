@@ -226,7 +226,7 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
                       SignOutDialog(
                         onConfirm: () {
                           // 로그아웃 로직 실행
-                         //viewModel.signOut(); // 실제 구현 필요
+                         viewModel.signOut(); // 실제 구현 필요
                           _showSnackBar('로그아웃 완료', '로그아웃이 완료되었습니다.');
                         },
                         onCancel: () {
