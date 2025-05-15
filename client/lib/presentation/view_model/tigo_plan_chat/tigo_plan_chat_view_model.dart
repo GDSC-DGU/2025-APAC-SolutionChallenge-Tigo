@@ -105,9 +105,7 @@ class TigoPlanChatViewModel extends GetxController {
     }
     print('[DEBUG] Firestore dialogs 문서: ${dialogDoc.data()}');
 
-    final url = Uri.parse(
-      'http://127.0.0.1:5001/$projectId/us-central1/tripPlan',
-    );
+    final url = Uri.parse('${apiBaseUrl}/$projectId/us-central1/tripPlan');
     final body = jsonEncode({'userId': userId, 'dialogId': currentDialogId});
     print('[DEBUG] 플랜 생성 요청: userId=$userId, dialogId=$currentDialogId');
     final response = await http.post(
@@ -355,58 +353,6 @@ $videoListText
     } else {
       throw Exception('Gemini API 호출 실패: ${response.body}');
     }
-  }
-
-  Future<void> saveLastCycleToServer() async {
-    final url = Uri.parse(
-      'http://127.0.0.1:5001/$projectId/us-central1/createDialog',
-    );
-    if (messages.length < 2) return;
-    final lastUser = messages.lastWhere(
-      (m) => m.isUser,
-      orElse: () => null as ChatMessage,
-    );
-    final lastAssistant = messages.reversed.firstWhere(
-      (m) => !m.isUser,
-      orElse: () => null as ChatMessage,
-    );
-    if (lastUser == null || lastAssistant == null) return;
-    final dialog = [
-      {'role': 'assistant', 'content': lastAssistant.text},
-      {'role': 'user', 'content': lastUser.text},
-    ];
-    final body = jsonEncode({
-      'userId': userId,
-      'dialogId': currentDialogId,
-      'dialog': dialog,
-    });
-    try {
-      print('DEBUG] 서버에 저장되는 유저 id : $userId');
-      print("[DEBUG] 서버에 저장되는 대화 내용: $dialog");
-      await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: body,
-      );
-      print('[DEBUG] saveDialog(1cycle) 호출 완료@@@@@@');
-    } catch (e) {
-      print('[ERROR] saveDialog(1cycle) 호출 실패: $e');
-    }
-  }
-
-  Future<void> addMessageToDialog(String dialogId, ChatMessage message) async {
-    final messagesRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('dialogs')
-        .doc(dialogId)
-        .collection('messages');
-    await messagesRef.add({
-      'text': message.text,
-      'isUser': message.isUser,
-      'createdAt': DateTime.now().toIso8601String(),
-      // 필요시 추가 필드
-    });
   }
 
   // Gemini API 호출용 프롬프트 생성 함수
