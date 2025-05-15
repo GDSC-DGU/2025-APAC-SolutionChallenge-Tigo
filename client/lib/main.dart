@@ -27,10 +27,21 @@ void main() async {
 }
 
 Future<void> requestPermissions() async {
-  await Permission.location.request();
-  await Permission.locationAlways.request();
-}
+  final permissions = [
+    Permission.camera,
+    Permission.microphone,
+    Permission.location,
+    Permission.locationAlways,
+    Permission.locationWhenInUse,
+    Permission.storage, // Android
+    Permission.photos, // iOS
+    Permission.mediaLibrary, // iOS
+  ];
 
+  for (final permission in permissions) {
+    await permission.request();
+  }
+}
 
 Future<void> onInitSystem() async {
   // Widget Binding
@@ -62,7 +73,6 @@ Future<void> onReadySystem() async {
   // Storage & Database
   await StorageFactory.onReady();
 
-
   // If new download app, remove tokens
   // When token exists, isFirstRun is false
   bool isFirstRun = StorageFactory.systemProvider.getFirstRun();
@@ -75,10 +85,10 @@ Future<void> onReadySystem() async {
 
     await localProvider.onReady();
 
-    await NotificationUtil.setScheduleLocalNotification(
-      isActive: localProvider.getNotificationActive(),
-      hour: localProvider.getNotificationHour(),
-      minute: localProvider.getNotificationMinute(),
-    );
+    // await NotificationUtil.setScheduleLocalNotification(
+    //   isActive: localProvider.getNotificationActive(),
+    //   hour: localProvider.getNotificationHour(),
+    //   minute: localProvider.getNotificationMinute(),
+    // );
   }
 }

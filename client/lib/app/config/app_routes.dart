@@ -18,6 +18,9 @@ abstract class AppRoutes {
   // Tigo 계획표 생성중 화면
   static const String TIGO_PLAN_CHAT = '/tigo-plan-chat';
 
+  // 계획표 리스트 화면
+  static const String PLAN_LIST = '/plan-list';
+
   // Tigo 계획표 생성완료 화면
   static const String TIGO_PLAN_COMPLETED = '/tigo-plan-completed';
 }

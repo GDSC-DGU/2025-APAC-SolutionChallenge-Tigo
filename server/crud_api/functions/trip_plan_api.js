@@ -3,18 +3,18 @@ const { GoogleAuth } = require("google-auth-library");
 const fetch = require("node-fetch");
 const admin = require("firebase-admin");
 const { FieldValue } = require("firebase-admin/firestore");
-const project = functions.config().tigo.project_id;
 const location = "us-central1";
 const model = "gemini-2.0-flash-001";
 const axios = require("axios");
-const GOOGLE_API_KEY =  functions.config().tigo.google_map_key;
-
+const project = functions.config().tigo?.project_id;
+const GOOGLE_API_KEY = functions.config().tigo?.google_api_key;
 const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true });
 
 function stripCodeBlock(text) {
   if (!text) return "";
@@ -58,6 +58,39 @@ function jsObjectToJson(str) {
   str = str.replace(/'([^']*)'/g, '"$1"');
   return str;
 }
+// 자동으로 1씩 올려주는 카운터 함수
+async function getNextAutoId(counterPath) {
+  const counterRef = counterPath; // DocumentReference
+
+  const result = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    let current = 0;
+    if (snap.exists) {
+      current = snap.data().value || 0;
+    }
+    const next = current + 1;
+    tx.set(counterRef, { value: next }, { merge: true });
+    return next;
+  });
+
+  return result.toString(); // Firestore docId는 string
+}
+
+// 5글자 userId로 전체 userId 찾기
+async function getFullUserId(shortId) {
+  const usersRef = db.collection("users");
+  const snap = await usersRef
+    .where("id", ">=", shortId)
+    .where("id", "<", shortId + "\uf8ff")
+    .limit(1)
+
+    .get();
+  if (snap.empty) {
+    throw new Error("userId 매핑 실패: " + shortId);
+  }
+  const doc = snap.docs[0];
+  return doc.id;
+}
 
 exports.tripPlan = functions
   .region(location)
@@ -65,33 +98,41 @@ exports.tripPlan = functions
     memory: "512MB",
     timeoutSeconds: 60,
   })
-
   .https.onRequest(async (req, res) => {
-    console.log("🔥 tripPlan 함수가 호출되었습니다!");
-
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
       return;
     }
-
-    // 테스트 환경에서는 userId를 무조건 'test1'로 강제
-    let { userId } = req.body;
-    userId = "test1";
-    // Firestore에서 대화 불러오기
-    const messagesRef = db
-      .collection("dialogs")
-      .doc(userId)
-      .collection("messages");
-    const snapshot = await messagesRef.orderBy("timestamp").get();
-    const dialog = snapshot.docs.map((doc) => doc.data());
-    console.log("받은 대화:", dialog);
-
-    if (!dialog || !Array.isArray(dialog)) {
-      res.status(400).json({ error: "dialog 파라미터 누락" });
-      return;
+    let { userId: shortId, dialogId } = req.body;
+    if (!shortId || !dialogId) {
+      return res.status(400).json({ error: "userId 또는 dialogId 누락" });
     }
+    let userId;
+    try {
+      userId = await getFullUserId(shortId);
+    } catch (e) {
+      return res.status(404).json({ error: e.message });
+    }
+    const dialogRef = db
+      .collection("users")
+      .doc(shortId)
+      .collection("dialogs")
+      .doc(dialogId);
+    const dialogDoc = await dialogRef.get();
+    if (!dialogDoc.exists) {
+      return res.status(404).json({ error: "대화방이 없습니다." });
+    }
+    const dialogData = dialogDoc.data();
 
-    // 2. role-content 텍스트로 변환
+    if (!dialogData.createdAt) {
+    }
+    const messagesRef = dialogDoc.ref.collection("messages");
+    if (!snapshot.size) {
+      return res.status(404).json({ error: "대화가 없습니다." });
+    }
+    const dialogDocs = snapshot.docs;
+    const dialog = dialogDocs.map((doc) => doc.data());
+
     const dialogText = dialog
       .map(
         (msg) =>
@@ -99,7 +140,6 @@ exports.tripPlan = functions
       )
       .join("\n");
 
-    // 3. 프롬프트와 결합
     const systemPrompt = `
 아래는 여행 챗봇과 사용자의 실제 대화 내역입니다.
 
@@ -112,6 +152,7 @@ ${dialogText}
 
 - "date": "2024-05-20" (방문 날짜, ISO 8601 형식)
 - "time": "09:00" (방문 시간, 24시간제)
+- "local": "서울특별시"(해당 날짜의 방문지역, 예: 부산광역시, 제주도등)
 - "place": "경복궁" (장소명)
 - "category": "궁궐" (장소 카테고리, 예: 궁궐, 박물관, 카페 등)
 - "openTime": "09:00" (오픈 시간, 24시간제)
@@ -132,6 +173,7 @@ ${dialogText}
   {
     "date": "2024-05-20",
     "time": "09:00",
+    "local": "서울특별시",
     "place": "경복궁",
     "category": "궁궐",
     "openTime": "09:00",
@@ -149,20 +191,17 @@ ${dialogText}
 **각 날짜(date)는 서로 달라야 하며, 하루에 여러 spot이 배정될 수 있어.**
 `;
 
-    // 4. Gemini API 호출용 messages
     const messagesForGemini = [
       { role: "user", parts: [{ text: systemPrompt }] },
     ];
 
     try {
-      // Google 인증 토큰 발급
       const auth = new GoogleAuth({
         scopes: "https://www.googleapis.com/auth/cloud-platform",
       });
       const client = await auth.getClient();
       const accessToken = await client.getAccessToken();
 
-      // Gemini generateContent API 호출
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -181,87 +220,166 @@ ${dialogText}
       });
 
       const data = await response.json();
-      // 실제 텍스트 추출
       const text =
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
         data.candidates?.[0]?.content?.text ||
         JSON.stringify(data);
-
-      // Gemini가 JSON만 출력하도록 프롬프트를 줬으니, 코드블록 제거 후 파싱 시도
       const cleanText = stripCodeBlock(text);
-      let schedules;
+
+      let schedules = [];
       try {
         let tryText = jsObjectToJson(cleanText);
         if (!tryText.trim().startsWith("[")) {
           tryText = `[${tryText}]`;
         }
-        // 1차 시도: 전체 파싱
-        try {
-          schedules = JSON.parse(tryText);
-        } catch (e) {
-          // 2차 시도: 개별 객체만 추출해서 파싱
-          schedules = [];
-          // 객체 단위로 추출 (중괄호로 감싼 부분)
-          const objectRegex = /{[\s\S]*?}/g;
-          const matches = tryText.match(objectRegex);
-          if (matches) {
-            for (const objStr of matches) {
-              try {
-                schedules.push(JSON.parse(jsObjectToJson(objStr)));
-              } catch (e) {
-                // 파싱 실패한 객체는 무시
-              }
-            }
-          }
-          // 혹시 배열인데 내부가 객체가 아닐 수도 있으니, 마지막 방어
-          if (!Array.isArray(schedules)) schedules = [];
-        }
-        // schedules가 비어있으면 최소 빈 배열 반환
+        schedules = JSON.parse(tryText);
         if (!Array.isArray(schedules)) schedules = [];
       } catch (e) {
-        // 이 블록까지 오면 정말 심각한 문제, 그래도 빈 배열 반환
         schedules = [];
       }
 
-      // 구글맵 상세정보 enrich
-      console.log("before enrich schedules:", schedules);
-      const enriched = await enrichAllSchedules(schedules);
-      console.log("after enrich schedules:", enriched);
-      res.json({ result: JSON.stringify(enriched) });
+      const createdAt = new Date().toISOString();
+      const enriched = (await enrichAllSchedules(schedules)).map((spot) => ({
+        ...spot,
+        createdAt,
+      }));
+
+      const counterPath = db
+        .collection("tripPlans")
+        .doc(shortId)
+        .collection("meta")
+        .doc("counter");
+      const planId = await getNextAutoId(counterPath);
+
+      await db
+        .collection("tripPlans")
+        .doc(shortId)
+        .collection("plans")
+        .doc(planId)
+        .set({
+          userId: shortId,
+          createdAt,
+          schedules: enriched,
+        });
+      const firstSpot = enriched[0] || {};
+      const firstLocation = firstSpot.local || "알 수 없음";
+      const firstThumbnail = firstSpot.thumbnail || "";
+      // 플랜 요약 정보 생성
+      const planName = `${firstLocation} ${
+        [...new Set(enriched.map((s) => s.date))].length
+      }일 여행`;
+      const planThumbnailImage = firstThumbnail;
+      const days = [...new Set(enriched.map((s) => s.date))].length;
+      const mainSpots = enriched.slice(0, 3).map((s) => s.place);
+
+      // users/{userId}/plans/{planId}에 요약 정보 저장
+      await db
+        .collection("users")
+        .doc(shortId)
+        .collection("plans")
+        .doc(planId)
+        .set({
+          planId,
+          planName,
+          planThumbnailImage,
+          createdAt,
+          location: firstLocation,
+          days,
+          mainSpots,
+          dialogId,
+        });
+
+      // 기존 대화방에도 플랜 정보 저장 (겸용)
+      await db
+        .collection("users")
+        .doc(userId)
+        .collection("dialogs")
+        .doc(dialogId)
+        .set(
+          {
+            userId: shortId,
+            planId,
+            location: firstLocation,
+            thumbnail: firstThumbnail,
+            createdAt,
+          },
+          { merge: true }
+        );
+
+      const responseData = { success: true, planId, schedules: enriched };
+      res.json(responseData);
     } catch (e) {
       console.error("에러 발생:", e);
       res.status(500).json({ error: e.toString() });
     }
   });
 
-exports.saveDialog = functions
+// 대화 세션(방) 생성
+exports.createDialog = functions
   .region(location)
   .https.onRequest(async (req, res) => {
     if (req.method !== "POST") {
-      res.status(405).send("Method Not Allowed");
-      return;
+      return res.status(405).send("Method Not Allowed");
     }
-    let { userId, dialog } = req.body;
-    userId = "test1";
-    if (!dialog) {
-      res.status(400).json({ error: "userId, dialog 파라미터 누락" });
-      return;
+    let { userId: shortId, dialog } = req.body;
+    if (!shortId || !dialog || !Array.isArray(dialog)) {
+      return res
+        .status(400)
+        .json({ error: "userId 또는 dialog 파라미터 누락" });
     }
-    // dialog: [{role, content}, ...]
-    const batch = db.batch();
-    const messagesRef = db
-      .collection("dialogs")
+    let userId;
+    try {
+      userId = await getFullUserId(shortId);
+    } catch (e) {
+      return res.status(404).json({ error: e.message });
+    }
+    // 대화방 생성
+    const dialogCounterPath = db
+      .collection("users")
       .doc(userId)
+      .collection("meta")
+      .doc("counter");
+    const dialogId = await getNextAutoId(dialogCounterPath);
+    const dialogRef = db
+      .collection("users")
+      .doc(shortId)
+      .collection("dialogs")
+      .doc(dialogId);
+    await dialogRef.set({ createdAt: new Date().toISOString() });
+
+    // 첫 메시지들 저장
+    const messagesRef = dialogRef.collection("messages");
+    for (const msg of dialog) {
+      const msgData = { ...msg, createdAt: new Date().toISOString() };
+      const msgDoc = await messagesRef.add(msgData);
+    }
+
+    res.json({ success: true, userId, dialogId });
+  });
+
+// 메시지 저장
+exports.saveMessage = functions
+  .region(location)
+  .https.onRequest(async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
+    const { userId: shortId, dialogId, message } = req.body;
+    if (!shortId || !dialogId || !message) {
+      return res.status(400).json({ error: "파라미터 누락" });
+    }
+    const userId = await getFullUserId(shortId);
+    const messagesRef = db
+      .collection("users")
+      .doc(shortId)
+      .collection("dialogs")
+      .doc(dialogId)
       .collection("messages");
-    dialog.forEach((msg) => {
-      const docRef = messagesRef.doc(); // 자동 ID
-      batch.set(docRef, {
-        ...msg,
-        timestamp: FieldValue.serverTimestamp(),
-      });
+    const msgDoc = await messagesRef.add({
+      ...message,
+      createdAt: new Date().toISOString(),
     });
-    await batch.commit();
-    res.json({ success: true });
+    res.json({ success: true, userId, dialogId, messageId: msgDoc.id });
   });
 
 async function searchPlace(placeName) {
@@ -280,7 +398,6 @@ async function getPlaceDetails(placeId) {
 function getPhotoUrl(photoReference) {
   return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_API_KEY}`;
 }
-
 async function enrichSchedule(schedule) {
   const placeId = await searchPlace(schedule.place);
   if (!placeId) return { ...schedule, error: "장소 검색 실패" };

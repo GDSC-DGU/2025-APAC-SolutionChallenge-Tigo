@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:tigo/data/factory/local_storage_factory.dart';
 import 'package:tigo/data/provider/user/user_local_provider.dart';
 import 'package:tigo/data/provider/user/user_remote_provider.dart';
@@ -58,6 +59,7 @@ class UserRepositoryImpl extends GetxService implements UserRepository {
   @override
   Future<void> updateUserInformation({required bool isSignIn}) async {
     if (!isSignIn) {
+      print('debug: updateUserInformation: GUEST');
       // 로그아웃 시 GUEST로 초기화
       await _localProvider.setId("GUEST");
       await _localProvider.setNickname("GUEST");
@@ -66,7 +68,34 @@ class UserRepositoryImpl extends GetxService implements UserRepository {
       return;
     }
 
-    // User Brief Information
+    // Remote Update(Trigger Gap Handling)
+    int maxRetries = 5;
+    int retryCount = 0;
+
+    while (retryCount < maxRetries) {
+      try {
+        // await _remoteProvider.setDeviceToken(
+        //   await FirebaseMessaging.instance.getToken() ?? "",
+        // );
+        // await _remoteProvider.setDeviceLanguage(
+        //   Get.deviceLocale?.languageCode == "ko" ? "ko" : "en",
+        // );
+
+
+        break;
+      } catch (e) {
+        retryCount++;
+
+        if (retryCount == maxRetries) {
+          rethrow;
+        }
+
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }
+
+    // Remote -> Local Update
+    // System Information
     await _localProvider.setId((await _remoteProvider.getId()).substring(0, 5));
     await _localProvider.setNickname(await _remoteProvider.getNickname());
     await _localProvider.setEmail(await _remoteProvider.getEmail());

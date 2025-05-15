@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:tigo/app/bindings/init_binding.dart';
 import 'package:tigo/app/config/app_config.dart';
 import 'package:tigo/app/config/app_dependency.dart';
 import 'package:tigo/app/config/app_pages.dart';
@@ -39,7 +40,7 @@ class MainApp extends StatelessWidget {
 
       // Initial Route
       initialRoute: AppRoutes.ROOT,
-      initialBinding: AppDependency(),
+      initialBinding: InitBinding(),
 
       // Routes
       getPages: AppPages.data,
