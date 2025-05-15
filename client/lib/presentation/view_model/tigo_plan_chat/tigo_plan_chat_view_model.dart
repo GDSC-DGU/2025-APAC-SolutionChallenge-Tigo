@@ -432,6 +432,7 @@ $videoListText
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+
       if (text == null) throw Exception('Gemini 응답 파싱 실패');
       print('==== [Gemini 최종 응답 텍스트] ====');
       print(text);

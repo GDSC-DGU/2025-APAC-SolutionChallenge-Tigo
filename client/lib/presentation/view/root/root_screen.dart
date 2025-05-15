@@ -6,7 +6,7 @@ import 'package:tigo/app/utility/security_util.dart';
 import 'package:tigo/core/screen/base_screen.dart';
 import 'package:tigo/presentation/view/home/home_screen.dart';
 import 'package:tigo/presentation/view/live_chatbot/live_chatbot_screen.dart';
-import 'package:tigo/presentation/view/profile/my_page_screen.dart';
+import 'package:tigo/presentation/view/profile/profile_screen.dart';
 import 'package:tigo/presentation/view/root/widget/custom_bottom_navigation_bar/custom_bottom_navigation_bar.dart';
 import 'package:tigo/presentation/view_model/root/root_view_model.dart';
 import 'package:tigo/presentation/widget/dialog/sign_in_dialog.dart';
