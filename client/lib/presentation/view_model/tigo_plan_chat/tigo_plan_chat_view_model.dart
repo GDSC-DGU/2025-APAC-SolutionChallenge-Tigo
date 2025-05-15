@@ -227,12 +227,13 @@ $videoListText
         .replaceAll(RegExp(r'```'), '')
         .trim();
   }
+
   // 일정표 생성 요청 (dialog[] 전체를 서버로 전송)
   Future<String?> requestTripPlan() async {
     final url = Uri.parse(
       'https://us-central1-tigo-ce719.cloudfunctions.net/tripPlan-1',
     );
-    final userId = 'test1'; // 테스트용 userId
+    const userId = 'test1'; // 테스트용 userId
     final body = jsonEncode({'userId': userId});
     print('[DEBUG] 서버로 보내는 userId: $userId');
     final response = await http.post(
@@ -262,9 +263,10 @@ $videoListText
   Future<void> sendToGeminiWithDialog(List<Map<String, dynamic>> dialog) async {
     try {
       final url = Uri.parse(
+
         'https://us-central1-tigo-ce719.cloudfunctions.net/tripPlan-1',
       );
-      final userId = 'test'; // 테스트용 userId
+      const userId = 'test'; // 테스트용 userId
       final body = jsonEncode({'userId': userId});
       print('[DEBUG] Gemini API 호출(userId): $userId');
 
@@ -304,9 +306,9 @@ $videoListText
     ]);
     // 서버에서 Gemini 호출 → 첫 assistant 메시지 받아오기
     final url = Uri.parse(
-      'http://127.0.0.1:5001/${projectId}/us-central1/tripPlan',
+      'http://127.0.0.1:5001/$projectId/us-central1/tripPlan',
     );
-    final userId = 'test';
+    const userId = 'test';
     final body = jsonEncode({'userId': userId});
     final response = await http.post(
       url,
@@ -323,9 +325,9 @@ $videoListText
 
   // 유저 입력과 직전 assistant 메시지를 1cycle로 서버에 저장만 (Gemini 호출 X)
   Future<void> saveUserAndAssistantCycle(String userInput) async {
-    final userId = 'test';
+    const userId = 'test';
     final url = Uri.parse(
-      'http://127.0.0.1:5001/${projectId}/us-central1/saveDialog',
+      'http://127.0.0.1:5001/$projectId/us-central1/saveDialog',
     );
     // 직전 assistant 메시지 찾기
     final lastAssistant = messages.reversed.firstWhere(
@@ -333,9 +335,7 @@ $videoListText
       orElse: () => null as ChatMessage,
     );
     final List<ChatMessage> cycle = [];
-    if (lastAssistant != null) {
-      cycle.add(ChatMessage(text: lastAssistant.text, isUser: false));
-    }
+    cycle.add(ChatMessage(text: lastAssistant.text, isUser: false));
     cycle.add(ChatMessage(text: userInput, isUser: true));
     final dialog =
         cycle
@@ -383,9 +383,9 @@ $videoListText
   // 최근 N개 메시지를 서버에 임시 저장 (응답은 무시)
   Future<void> requestTripPlanWithDialog(List<ChatMessage> recent) async {
     // 테스트용 userId
-    final userId = 'test';
+    const userId = 'test';
     final url = Uri.parse(
-      'http://127.0.0.1:5001/${projectId}/us-central1/saveDialog',
+      'http://127.0.0.1:5001/$projectId/us-central1/saveDialog',
     );
     final dialog =
         recent
@@ -431,6 +431,7 @@ $videoListText
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+
       if (text == null) throw Exception('Gemini 응답 파싱 실패');
       return text;
     } else {
@@ -439,7 +440,7 @@ $videoListText
   }
 
   Future<void> saveLastCycleToServer() async {
-    final userId = 'test';
+    const userId = 'test';
     final url = Uri.parse(
       'https://us-central1-tigo-ce719.cloudfunctions.net/saveDialog-1',
     );
@@ -452,7 +453,6 @@ $videoListText
       (m) => !m.isUser,
       orElse: () => null as ChatMessage,
     );
-    if (lastUser == null || lastAssistant == null) return;
     final dialog = [
       {'role': 'assistant', 'content': lastAssistant.text},
       {'role': 'user', 'content': lastUser.text},
