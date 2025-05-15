@@ -1,5 +1,5 @@
- 
- import 'package:get/get.dart';
+
+import 'package:get/get.dart';
 import 'package:tigo/app/utility/security_util.dart';
 import 'package:tigo/domain/entity/user_brief_state.dart';
 import 'package:tigo/domain/repository/user_repository.dart';
