@@ -1,7 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:tigo/app/config/app_routes.dart';
-import 'package:tigo/app/config/color_system.dart';
 import 'package:tigo/app/utility/security_util.dart';
 import 'package:tigo/data/factory/storage_factory.dart';
 import 'package:tigo/domain/entity/user_brief_state.dart';

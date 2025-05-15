@@ -1,0 +1,4 @@
+  websockets==14.2
+  google-auth
+  google-auth-oauthlib
+  google-auth-httplib2

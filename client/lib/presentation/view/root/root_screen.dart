@@ -18,7 +18,7 @@ class RootScreen extends BaseScreen<RootViewModel> {
   @override
   Widget buildBody(BuildContext context) {
     return Obx(
-      () => IndexedStack(
+          () => IndexedStack(
         index: viewModel.selectedIndex,
         children: const [
           LiveChatbotScreen(),

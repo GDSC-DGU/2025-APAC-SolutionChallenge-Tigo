@@ -66,9 +66,10 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                     title: 'For list',
                     date: 'Open your travel list',
                     bgColor: Color(0xFFFFF0E0),
-                    onTap: () {},
+                    onTap: () {
+                      Get.toNamed(AppRoutes.PLAN_LIST);
+                    },
                   ),
-
                 ),
 
                 const SizedBox(width: 16),

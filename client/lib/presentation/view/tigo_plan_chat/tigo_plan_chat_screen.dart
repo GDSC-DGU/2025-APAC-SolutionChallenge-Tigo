@@ -10,13 +10,25 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:rive/rive.dart' as rive;
 import 'dart:async';
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TigoPlanChatScreen extends BaseScreen<TigoPlanChatViewModel> {
   const TigoPlanChatScreen({super.key});
 
   @override
   Widget buildBody(BuildContext context) {
-    return _TigoPlanChatScreenBody();
+    return Stack(
+      children: [
+        _TigoPlanChatScreenBody(),
+        Obx(
+          () =>
+              Get.find<TigoPlanChatViewModel>().isEnableGreyBarrier.value
+                  ? OverlayGreyBarrier()
+                  : SizedBox.shrink(),
+        ),
+      ],
+    );
   }
 }
 
@@ -75,13 +87,12 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final vm = Get.find<TigoPlanChatViewModel>();
       if (vm.messages.isEmpty) {
-        // 첫 질문(프롬프트)을 Gemini가 아니라 클라에서 강제로 추가
-        vm.messages.add(
-          ChatMessage(
-            text:
-                "현재 당신의 여행 계획 중 정해진 부분을 자유롭게 입력해주세요~\nex) 5월 말에 친구 6명이랑 서울로 여행을 갈 계획이야.",
-            isUser: false,
-          ),
+        // Firestore 기반 대화방 생성 및 실시간 리스닝 시작
+        await vm.startNewDialog();
+        // 첫 질문(프롬프트)을 Firestore에 저장
+        await vm.addMessage(
+          "현재 당신의 여행 계획 중 정해진 부분을 자유롭게 입력해주세요~\nex) 5월 말에 친구 6명이랑 서울로 여행을 갈 계획이야.",
+          isUser: false,
         );
       }
     });
@@ -102,13 +113,10 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     if (text.isEmpty) return;
     _controller.clear();
 
-    vm.messages.add(ChatMessage(text: text, isUser: true));
 
     setState(() {
       userQuestionCount++;
     });
-
-    final geminiAnswer = await vm.callGeminiApi(text);
 
     setState(() {
       animatedText = "";
@@ -134,6 +142,14 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
         vm.saveLastCycleToServer();
       }
     });
+    // Firestore에 유저 메시지 저장
+    await vm.addMessage(text, isUser: true);
+
+    // Gemini에 누적 대화와 user 메시지 전달 → 답변 받기
+    final geminiAnswer = await vm.callGeminiWithHistory(vm.messages, text);
+
+    // Firestore에 Gemini 답변 저장
+    await vm.addMessage(geminiAnswer, isUser: false);
   }
 
   void _requestTripPlan() async {
@@ -141,8 +157,121 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     final result = await vm.requestTripPlan();
     if (result != null) {
       print('result: $result');
-      vm.messages.add(ChatMessage(text: '[여행 일정표]\n$result', isUser: false));
+      // Firestore에 일정표 요약 메시지 저장(옵션)
+      await vm.addMessage('[여행 일정표]\n$result', isUser: false);
     }
+  }
+
+  void _playYoutube(String videoUrl) {
+    final videoId = Uri.parse(videoUrl).queryParameters['v'] ?? '';
+    if (videoId.isEmpty) return;
+    setState(() {
+      _currentVideoId = videoId;
+      _ytController?.close();
+      _ytController = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        params: const YoutubePlayerParams(
+          showFullscreenButton: true,
+          enableCaption: false,
+        ),
+      );
+    });
+  }
+
+  Widget _buildVideoCard(ChatMessage msg) {
+    final videoId =
+        msg.videoUrl != null
+            ? Uri.parse(msg.videoUrl!).queryParameters['v'] ?? ''
+            : '';
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child:
+                      msg.thumbnailUrl != null
+                          ? Image.network(
+                            msg.thumbnailUrl!,
+                            width: 120,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          )
+                          : Container(
+                            width: 120,
+                            height: 80,
+                            color: Colors.grey[200],
+                          ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        msg.videoTitle ?? '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        msg.videoSummary ?? '',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => _playYoutube(msg.videoUrl!),
+                            child: const Text('영상 재생'),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.open_in_new,
+                              color: Colors.blue,
+                            ),
+                            onPressed: () async {
+                              final url = msg.videoUrl!;
+                              if (await canLaunchUrl(Uri.parse(url))) {
+                                await launchUrl(Uri.parse(url));
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_currentVideoId == videoId && _ytController != null)
+            Container(
+              width: MediaQuery.of(context).size.width - 32,
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: YoutubePlayer(controller: _ytController!),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -623,12 +752,16 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+        ),
+        Obx(
+          () =>
+              Get.find<TigoPlanChatViewModel>().isEnableGreyBarrier.value
+                  ? OverlayGreyBarrier()
+                  : SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
