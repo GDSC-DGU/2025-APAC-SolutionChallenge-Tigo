@@ -3,6 +3,7 @@ class Assets {
   Assets._();
 
   // images
+  static const String askTigoBtnImage = 'assets/images/ask_tigo_btn_image.png';
   static const String askTigoImage = 'assets/images/ask_tigo_image.png';
   static const String cheonggyecheonImage =
       'assets/images/cheonggyecheon_image.png';
@@ -28,8 +29,11 @@ class Assets {
   static const String thumbnailRomeImage =
       'assets/images/thumbnail_rome_image.png';
   static const String splashImage = 'assets/images/splash_image.png';
+  static const String distanceLineImage =
+      'assets/images/distance_line_image.png';
 
   // icons
+  static const String distanceIcon = 'assets/icons/distance_icon.svg';
   static const String homeIcon = 'assets/icons/home_icon.svg';
   static const String profileIcon = 'assets/icons/profile_icon.svg';
   static const String webcamIcon = 'assets/icons/webcam_icon.svg';
