@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
 import 'package:tigo/app/config/app_routes.dart';
 import 'package:tigo/app/middleware/login_middleware.dart';
+import 'package:tigo/presentation/view/tigo_plan_creating/tigo_plan_creating_screen.dart';
 import 'package:tigo/presentation/view/plan_list/plan_list_screen.dart';
 import 'package:tigo/presentation/view/tigo_plan_chat/tigo_plan_chat_screen.dart';
 import 'package:tigo/presentation/view/root/root_screen.dart';
 import 'package:tigo/presentation/view/sign_in/sign_in_screen.dart';
+import 'package:tigo/presentation/view/tigo_plan_completed_screen/quick_plan_test_screen.dart';
 import 'package:tigo/presentation/view/tigo_plan_completed_screen/tigo_plan_completed_screen.dart';
 import 'package:tigo/presentation/view_model/plan_list/plan_list_binding.dart';
 import 'package:tigo/presentation/view_model/tigo_plan_chat/tigo_plan_chat_binding.dart';
@@ -24,7 +26,7 @@ abstract class AppPages {
       name: AppRoutes.ROOT,
       page: () => const RootScreen(),
       bindings: [RootBinding()],
-   //   middlewares: [LoginMiddleware()],
+        middlewares: [LoginMiddleware()],
     ),
     GetPage(
       name: AppRoutes.TIGO_PLAN_CHAT,
@@ -40,6 +42,14 @@ abstract class AppPages {
       name: AppRoutes.PLAN_LIST,
       page: () => const PlanListScreen(),
       binding: PlanListBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.TIGO_PLAN_CREATING,
+      page: () => const TigoPlanCreatingScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.QUICK_PLAN_TEST,
+      page: () => const QuickPlanTestScreen(),
     ),
   ];
 }

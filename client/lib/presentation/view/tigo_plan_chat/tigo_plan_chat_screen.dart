@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
+import 'package:tigo/app/config/app_routes.dart';
 import 'package:tigo/core/constant/assets.dart';
 import 'package:tigo/core/screen/base_screen.dart';
 import 'package:tigo/presentation/view_model/tigo_plan_chat/tigo_plan_chat_view_model.dart';
@@ -18,17 +19,7 @@ class TigoPlanChatScreen extends BaseScreen<TigoPlanChatViewModel> {
 
   @override
   Widget buildBody(BuildContext context) {
-    return Stack(
-      children: [
-        _TigoPlanChatScreenBody(),
-        Obx(
-          () =>
-              Get.find<TigoPlanChatViewModel>().isEnableGreyBarrier.value
-                  ? OverlayGreyBarrier()
-                  : SizedBox.shrink(),
-        ),
-      ],
-    );
+    return _TigoPlanChatScreenBody();
   }
 }
 
@@ -81,6 +72,15 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     });
   }
 
+  // promptPath를 arguments에서 받아오기
+  String get _promptPath {
+    final args = Get.arguments;
+    if (args is Map && args['promptPath'] is String) {
+      return args['promptPath'] as String;
+    }
+    return 'assets/prompts/travel_recommend_prompt.md';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,10 +90,15 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
         // Firestore 기반 대화방 생성 및 실시간 리스닝 시작
         await vm.startNewDialog();
         // 첫 질문(프롬프트)을 Firestore에 저장
-        await vm.addMessage(
-          "현재 당신의 여행 계획 중 정해진 부분을 자유롭게 입력해주세요~\nex) 5월 말에 친구 6명이랑 서울로 여행을 갈 계획이야.",
-          isUser: false,
-        );
+        String firstMessage;
+        if (_promptPath.contains('free_question_prompt.md')) {
+          firstMessage =
+              "Do you want to develop your existing plan further? Or would you like to create something new? Just ask me anything!";
+        } else {
+          firstMessage =
+              "Please freely enter any parts of your travel plan that are already decided.\nex) I'm planning to travel to Seoul with 6 friends at the end of May.";
+        }
+        await vm.addMessage(firstMessage, isUser: false);
       }
     });
   }
@@ -102,6 +107,9 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
   void dispose() {
     _controller.dispose();
     _ytController?.close();
+    // 채팅창 벗어날 때 메시지 초기화
+    final vm = Get.find<TigoPlanChatViewModel>();
+    vm.messages.clear();
     super.dispose();
   }
 
@@ -113,53 +121,56 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     if (text.isEmpty) return;
     _controller.clear();
 
-
     setState(() {
       userQuestionCount++;
     });
 
+    // Firestore에 유저 메시지 저장
+    await vm.addMessage(text, isUser: true);
+
+    // Gemini 답변 받아오기 (promptPath 적용)
+    final geminiAnswer = await vm.callGeminiWithHistory(
+      vm.messages,
+      text,
+      promptPath: _promptPath,
+    );
+
+    // 1. 답변을 바로 messages에 추가 (isTypingMessage: true로 구분)
+    final typingMsg = ChatMessage(text: "", isUser: false);
     setState(() {
       animatedText = "";
       currentTypingIndex = 0;
       isTyping = true;
-      vm.messages.add(ChatMessage(text: geminiAnswer, isUser: false));
+      vm.messages.add(typingMsg); // 임시 메시지 추가
     });
 
+    // 2. 타이핑 애니메이션 시작
     typingTimer?.cancel();
     typingTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       if (currentTypingIndex < geminiAnswer.length) {
         setState(() {
           animatedText += geminiAnswer[currentTypingIndex];
           currentTypingIndex++;
+          // 현재 타이핑 중인 메시지의 text를 업데이트
+          vm.messages[vm.messages.length - 1] = ChatMessage(
+            text: animatedText,
+            isUser: false,
+          );
         });
       } else {
         timer.cancel();
         setState(() {
           isTyping = false;
+          // 마지막 메시지를 최종 답변으로 교체
+          vm.messages[vm.messages.length - 1] = ChatMessage(
+            text: geminiAnswer,
+            isUser: false,
+          );
         });
-
-        // 🔹 타이핑 애니메이션 끝난 뒤 서버 저장
-        vm.saveLastCycleToServer();
+        // 3. Firestore에 Gemini 답변 저장
+        vm.addMessage(geminiAnswer, isUser: false);
       }
     });
-    // Firestore에 유저 메시지 저장
-    await vm.addMessage(text, isUser: true);
-
-    // Gemini에 누적 대화와 user 메시지 전달 → 답변 받기
-    final geminiAnswer = await vm.callGeminiWithHistory(vm.messages, text);
-
-    // Firestore에 Gemini 답변 저장
-    await vm.addMessage(geminiAnswer, isUser: false);
-  }
-
-  void _requestTripPlan() async {
-    final vm = Get.find<TigoPlanChatViewModel>();
-    final result = await vm.requestTripPlan();
-    if (result != null) {
-      print('result: $result');
-      // Firestore에 일정표 요약 메시지 저장(옵션)
-      await vm.addMessage('[여행 일정표]\n$result', isUser: false);
-    }
   }
 
   void _playYoutube(String videoUrl) {
@@ -305,7 +316,15 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                             Row(
                               children: [
                                 GestureDetector(
-                                  onTap: () => Navigator.pop(context),
+                                  onTap: () {
+                                    if (_promptPath.contains(
+                                      'free_question_prompt.md',
+                                    )) {
+                                      Get.offAllNamed(AppRoutes.ROOT);
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  },
                                   child: const Icon(
                                     Icons.arrow_back_ios,
                                     size: 20,
@@ -314,7 +333,8 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                 const Expanded(
                                   child: Center(
                                     child: Text(
-                                      'Ask me anything',
+                                      'Ask to Tigo!',
+
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -324,51 +344,60 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                 ),
                                 const SizedBox(width: 20),
 
-                                Container(
-                                  height: 30,
-                                  width: 30,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        userQuestionCount >= 5
-                                            ? const Color(0xFF80BFFF)
-                                            : Colors.grey,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: IconButton(
-                                    onPressed:
-                                        userQuestionCount >= 5
-                                            ? _requestTripPlan
-                                            : null,
-                                    icon: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
+                                if (!_promptPath.contains(
+                                  'free_question_prompt.md',
+                                ))
+                                  Container(
+                                    height: 30,
+                                    width: 30,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          userQuestionCount >= 5
+                                              ? const Color(0xFF80BFFF)
+                                              : Colors.grey,
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    iconSize: 15,
-                                    padding: EdgeInsets.zero,
+                                    child: IconButton(
+                                      onPressed:
+                                          userQuestionCount >= 5
+                                              ? vm.requestTripPlan
+                                              : null,
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.white,
+                                      ),
+                                      iconSize: 15,
+                                      padding: EdgeInsets.zero,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Center(
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.75,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: LinearProgressIndicator(
-                                    value: (userQuestionCount / 5).clamp(
-                                      0.0,
-                                      1.0,
+
+                            !_promptPath.contains('free_question_prompt.md')
+                                ? Center(
+                                  child: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.75,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: LinearProgressIndicator(
+                                        value: (userQuestionCount / 5).clamp(
+                                          0.0,
+                                          1.0,
+                                        ),
+                                        minHeight: 6,
+                                        backgroundColor: Colors.grey[300],
+                                        color: const Color(0xFF80BFFF),
+                                      ),
                                     ),
-                                    minHeight: 6,
-                                    backgroundColor: Colors.grey[300],
-                                    color: const Color(0xFF80BFFF),
                                   ),
-                                ),
-                              ),
-                            ),
+                                )
+                                : const SizedBox.shrink(),
                           ],
                         ),
+                        
                       ),
 
                       const Divider(
@@ -708,7 +737,7 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                         child: TextField(
                                           controller: _controller,
                                           decoration: const InputDecoration(
-                                            hintText: "Let’s make a plan…..",
+                                            hintText: "Let's make a plan…..",
                                             border: InputBorder.none,
                                             filled: true,
                                             fillColor: Colors.white,
@@ -739,7 +768,8 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: IconButton(
-                                  onPressed: _requestTripPlan,
+                                  onPressed: vm.requestTripPlan,
+
                                   icon: const Icon(
                                     Icons.mic,
                                     color: Colors.white,
@@ -752,16 +782,12 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-        ),
-        Obx(
-          () =>
-              Get.find<TigoPlanChatViewModel>().isEnableGreyBarrier.value
-                  ? OverlayGreyBarrier()
-                  : SizedBox.shrink(),
-        ),
-      ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

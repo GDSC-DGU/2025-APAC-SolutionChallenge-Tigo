@@ -47,9 +47,7 @@ class GoogleSignInButton extends BaseWidget<SignInViewModel> {
             children: [
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 18),
-                child: Center(
-                  child: Text('Sign in with Google'),
-                ),
+                child: Center(child: Text('Sign in with Google')),
               ),
               Positioned(
                 left: 24,
@@ -68,27 +66,25 @@ class GoogleSignInButton extends BaseWidget<SignInViewModel> {
     );
   }
 
+  void _showSnackBar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.TOP,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      duration: const Duration(seconds: 2),
+      backgroundColor: Colors.black.withOpacity(0.7),
+      colorText: Colors.white,
+    );
+  }
+
   void _onPressSignInButton() {
     viewModel.signInWithGoogle().then((value) {
       if (value) {
         Get.offAllNamed(AppRoutes.ROOT);
-        Get.snackbar(
-          "Login success",
-          "You can use the AI trip service Tigo!",
-          snackPosition: SnackPosition.TOP,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          duration: const Duration(seconds: 2),
-          backgroundColor: ColorSystem.grey.withOpacity(0.3),
-        );
+        _showSnackBar('Login Success', 'You can use the AI trip service Tigo!');
       } else {
-        Get.snackbar(
-          'Login Failed',
-          'Please try again later',
-          snackPosition: SnackPosition.TOP,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          duration: const Duration(seconds: 2),
-          backgroundColor: ColorSystem.grey.withOpacity(0.3),
-        );
+        _showSnackBar('Login Failed', 'Please try again later');
       }
     });
   }

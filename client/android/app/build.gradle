@@ -15,10 +15,9 @@ if (localPropertiesFile.exists()) {
 
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')?.toInteger() ?: 1
 def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: "1.0.0"
-def googleMapKey = localProperties.getProperty('GOOGLE_MAP_KEY') ?: ""
 
 def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('key.properties')
+def keystorePropertiesFile = file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
@@ -45,19 +44,22 @@ android {
         versionCode flutterVersionCode
         versionName flutterVersionName
         manifestPlaceholders = [
-                googleMapKey    : googleMapKey,
+                googleMapKey    : "AIzaSyB-75bfOYrWmT1YRAmvSP4_2pc6wq9IeF8",
                 applicationName : "io.flutter.app.FlutterApplication"
         ]
     }
 
     signingConfigs {
-        release {
-             keyAlias = keystoreProperties['keyAlias']
+    release {
+        keyAlias = keystoreProperties['keyAlias']
         keyPassword = keystoreProperties['keyPassword']
         storeFile = file("${projectDir}/${keystoreProperties['storeFile']}")
         storePassword = keystoreProperties['storePassword']
+
+        // 실제 경로 출력
+        println "==[Keystore storeFile path]==> " + file("${projectDir}/${keystoreProperties['storeFile']}")
     }
-    }
+}
 
     buildTypes {
         release {

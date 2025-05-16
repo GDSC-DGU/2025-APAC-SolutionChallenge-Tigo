@@ -28,15 +28,10 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF4DAEFF),
-                    Color(0xFFEFF5FB),
-                  ],
+                  colors: [Color(0xFF4DAEFF), Color(0xFFEFF5FB)],
                 ),
               ),
-              child: CustomPaint(
-                painter: _HighlightPainter(),
-              ),
+              child: CustomPaint(painter: _HighlightPainter()),
             ),
           ),
           // Gradient Overlay
@@ -78,7 +73,7 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                   child: TempPlanCard(
                     iconAssetPath: 'assets/images/for_conversation.png',
                     title: ' For Conversation',
-                    date: ' Plan a trip with TIGO',
+                    date: ' Plan a trip with Tigo',
                     bgColor: const Color(0xFFE7F2FF),
                     onTap: () {
                       Get.toNamed(AppRoutes.TIGO_PLAN_CHAT);
@@ -170,21 +165,21 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                   child: Container(
                     height: 72,
                     width: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFB2D9FF), Color(0xFFE7EBFF)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
+                    // decoration: BoxDecoration(
+                    //   shape: BoxShape.circle,
+                    //   gradient: const LinearGradient(
+                    //     colors: [Color(0xFFB2D9FF), Color(0xFFE7EBFF)],
+                    //     begin: Alignment.topLeft,
+                    //     end: Alignment.bottomRight,
+                    //   ),
+                    //   boxShadow: [
+                    //     BoxShadow(
+                    //       color: Colors.blue.withOpacity(0.25),
+                    //       blurRadius: 12,
+                    //       offset: const Offset(0, 4),
+                    //     ),
+                    //   ],
+                    // ),
                     child: const Icon(
                       Icons.home,
                       color: Colors.white,
@@ -204,18 +199,21 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
 class _HighlightPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(0.8, -0.6),
-        radius: 1.4,
-        colors: [
-          Colors.white.withOpacity(0.6),
-          Colors.white.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width * 0.9, size.height * 0.15),
-        radius: size.width * 1.3,
-      ));
+    final paint =
+        Paint()
+          ..shader = RadialGradient(
+            center: const Alignment(0.8, -0.6),
+            radius: 1.4,
+            colors: [
+              Colors.white.withOpacity(0.6),
+              Colors.white.withOpacity(0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.9, size.height * 0.15),
+              radius: size.width * 1.3,
+            ),
+          );
 
     canvas.save();
 

@@ -15,16 +15,15 @@ abstract class BaseScreen<T extends GetxController> extends GetView<T> {
 
     // SafeArea로 감싸거나 감싸지 않는 옵션에 따라 화면을 구성
     return Container(
-      decoration: BoxDecoration(
-        color: unSafeAreaColor,
-      ),
-      child: wrapWithOuterSafeArea
-          ? SafeArea(
-              top: setTopOuterSafeArea,
-              bottom: setBottomOuterSafeArea,
-              child: _buildScaffold(context),
-            )
-          : _buildScaffold(context),
+      decoration: BoxDecoration(color: unSafeAreaColor),
+      child:
+          wrapWithOuterSafeArea
+              ? SafeArea(
+                top: setTopOuterSafeArea,
+                bottom: setBottomOuterSafeArea,
+                child: _buildScaffold(context),
+              )
+              : _buildScaffold(context),
     );
   }
 
@@ -37,13 +36,14 @@ abstract class BaseScreen<T extends GetxController> extends GetView<T> {
       floatingActionButtonLocation: floatingActionButtonLocation,
       floatingActionButton: buildFloatingActionButton,
       appBar: buildAppBar(context),
-      body: wrapWithInnerSafeArea
-          ? SafeArea(
-              top: setTopInnerSafeArea,
-              bottom: setBottomInnerSafeArea,
-              child: buildBody(context),
-            )
-          : buildBody(context),
+      body:
+          wrapWithInnerSafeArea
+              ? SafeArea(
+                top: setTopInnerSafeArea,
+                bottom: setBottomInnerSafeArea,
+                child: buildBody(context),
+              )
+              : buildBody(context),
       bottomNavigationBar: buildBottomNavigationBar(context),
     );
   }

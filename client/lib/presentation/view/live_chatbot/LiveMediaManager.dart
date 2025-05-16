@@ -80,6 +80,12 @@ class LiveAudioOutputManager {
     print('Float32 max: ${float32.reduce((a, b) => a > b ? a : b)}');
     return float32;
   }
+
+  Future<void> dispose() async {
+    await pcmProcessor.dispose();
+    // 필요시 추가 리소스 해제
+    // PCMProcessor 해제는 외부에서 직접 호출
+  }
 }
 
 // 오디오 입력 담당 (마이크 입력 → 1초 단위로 PCM16LE → base64)

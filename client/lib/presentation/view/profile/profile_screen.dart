@@ -188,22 +188,22 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
                     //const SizedBox(height: 16),
                     //// Location access agreement
                     //Row(
-                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      //children: [
-                       //const Text(
-                          //"Location access agreement",
-                          //style: TextStyle(
-                           // fontSize: 15,
-                           // fontWeight: FontWeight.w500,
-                          //),
-                        //),
-                        //Obx(
-                         // () => Switch(
-                         //   value: locationAgreed.value,
-                          //  onChanged: (v) => locationAgreed.value = v,
-                         // ),
-                        //),
-                      //],
+                    //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //children: [
+                    //const Text(
+                    //"Location access agreement",
+                    //style: TextStyle(
+                    // fontSize: 15,
+                    // fontWeight: FontWeight.w500,
+                    //),
+                    //),
+                    //Obx(
+                    // () => Switch(
+                    //   value: locationAgreed.value,
+                    //  onChanged: (v) => locationAgreed.value = v,
+                    // ),
+                    //),
+                    //],
                     //),
                   ],
                 ),
@@ -226,8 +226,8 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
                       SignOutDialog(
                         onConfirm: () {
                           // 로그아웃 로직 실행
-                         //viewModel.signOut(); // 실제 구현 필요
-                          _showSnackBar('로그아웃 완료', '로그아웃이 완료되었습니다.');
+                          viewModel.signOut();
+                          _showSnackBar('Sign Out', 'Sign Out is completed.');
                         },
                         onCancel: () {
                           Get.back();
@@ -255,7 +255,8 @@ class ProfileScreen extends BaseScreen<ProfileViewModel> {
       snackPosition: SnackPosition.TOP,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       duration: const Duration(seconds: 2),
-      backgroundColor: ColorSystem.grey.withOpacity(0.3),
+      backgroundColor: Colors.black.withOpacity(0.7),
+      colorText: Colors.white,
     );
   }
 }
