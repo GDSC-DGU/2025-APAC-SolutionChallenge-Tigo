@@ -18,52 +18,55 @@ class RootScreen extends BaseScreen<RootViewModel> {
   @override
   Widget buildBody(BuildContext context) {
     return Obx(
-          () => IndexedStack(
+      () => IndexedStack(
         index: viewModel.selectedIndex,
-        children: const [
-          LiveChatbotScreen(),
-          HomeScreen(),
-          ProfileScreen(),
-        ],
+        children: const [LiveChatbotScreen(), HomeScreen(), ProfileScreen()],
       ),
     );
   }
 
   @override
-  Widget? get buildFloatingActionButton => GestureDetector(
-    onTap: () {
-      if (viewModel.selectedIndex != 1) {
-        viewModel.changeIndex(1);
-      }
-    },
-    child: Container(
-      width: 65,
-      height: 65,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5CA9FF), Color(0xFFD1C2FF)],
-          begin: Alignment.bottomRight,
-          end: Alignment.topRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+  Widget? get buildFloatingActionButton => Obx(() {
+    // viewModel.selectedIndex == 0이면 FloatingActionButton 숨김
+    if (viewModel.selectedIndex == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (viewModel.selectedIndex != 1) {
+          viewModel.changeIndex(1);
+        }
+      },
+      child: Container(
+        width: 65,
+        height: 65,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF5CA9FF), Color(0xFFD1C2FF)],
+            begin: Alignment.bottomRight,
+            end: Alignment.topRight,
           ),
-        ],
-      ),
-      child: Center(
-        child: SvgPicture.asset(
-          Assets.homeIcon,
-          width: 25,
-          height: 25,
-          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: SvgPicture.asset(
+            Assets.homeIcon,
+            width: 25,
+            height: 25,
+            color: Colors.white,
+          ),
         ),
       ),
-    ),
-  );
+    );
+  });
 
   @override
   FloatingActionButtonLocation? get floatingActionButtonLocation =>
@@ -73,6 +76,14 @@ class RootScreen extends BaseScreen<RootViewModel> {
   bool get extendBodyBehindAppBar => true;
 
   @override
-  Widget? buildBottomNavigationBar(BuildContext context) =>
-      const CustomBottomNavigationBar();
+  Widget? buildBottomNavigationBar(BuildContext context) {
+    return Obx(() {
+      print('viewModel.selectedIndex: ${viewModel.selectedIndex}');
+      // viewModel.selectedIndex == 0이면(LiveChatbotScreen) 바텀바 숨김
+      if (viewModel.selectedIndex == 0) {
+        return const SizedBox.shrink();
+      }
+      return const CustomBottomNavigationBar();
+    });
+  }
 }
