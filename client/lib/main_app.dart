@@ -38,6 +38,8 @@ class MainApp extends StatelessWidget {
         return child!;
       },
 
+      debugShowCheckedModeBanner: false,
+
       // Initial Route
       initialRoute: AppRoutes.ROOT,
       initialBinding: InitBinding(),
