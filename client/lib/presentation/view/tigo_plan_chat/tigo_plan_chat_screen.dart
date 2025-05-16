@@ -373,25 +373,31 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Center(
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.75,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: LinearProgressIndicator(
-                                    value: (userQuestionCount / 5).clamp(
-                                      0.0,
-                                      1.0,
+
+                            !_promptPath.contains('free_question_prompt.md')
+                                ? Center(
+                                  child: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.75,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(bottom: 6),
+                                      child: LinearProgressIndicator(
+                                        value: (userQuestionCount / 5).clamp(
+                                          0.0,
+                                          1.0,
+                                        ),
+                                        minHeight: 6,
+                                        backgroundColor: Colors.grey[300],
+                                        color: const Color(0xFF80BFFF),
+                                      ),
                                     ),
-                                    minHeight: 6,
-                                    backgroundColor: Colors.grey[300],
-                                    color: const Color(0xFF80BFFF),
                                   ),
-                                ),
-                              ),
-                            ),
+                                )
+                                : const SizedBox.shrink(),
                           ],
                         ),
+                        
                       ),
 
                       const Divider(

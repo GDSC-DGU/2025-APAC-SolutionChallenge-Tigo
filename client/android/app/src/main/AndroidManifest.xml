@@ -23,6 +23,8 @@ package="org.gdgoc.tigo">
         android:label="tigo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data android:name="com.google.android.geo.API_KEY"
+         android:value="AIzaSyB-75bfOYrWmT1YRAmvSP4_2pc6wq9IeF8"/>
         <activity
             android:usesCleartextTraffic="true"
             android:name=".MainActivity"
@@ -41,8 +43,6 @@ package="org.gdgoc.tigo">
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-              <meta-data android:name="com.google.android.geo.API_KEY"
-                 android:value="${googleMapKey}"/>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

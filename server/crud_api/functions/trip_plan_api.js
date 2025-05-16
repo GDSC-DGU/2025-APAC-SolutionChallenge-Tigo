@@ -99,18 +99,22 @@ exports.tripPlan = functions
     timeoutSeconds: 60,
   })
   .https.onRequest(async (req, res) => {
+    console.log("[tripPlan] 요청 시작", req.body);
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
       return;
     }
     let { userId: shortId, dialogId } = req.body;
     if (!shortId || !dialogId) {
+      console.log("[tripPlan] userId 또는 dialogId 누락", req.body);
       return res.status(400).json({ error: "userId 또는 dialogId 누락" });
     }
     let userId;
     try {
       userId = await getFullUserId(shortId);
+      console.log("[tripPlan] userId 매핑 결과", userId);
     } catch (e) {
+      console.log("[tripPlan] userId 매핑 실패", e);
       return res.status(404).json({ error: e.message });
     }
     const dialogRef = db
@@ -120,19 +124,26 @@ exports.tripPlan = functions
       .doc(dialogId);
     const dialogDoc = await dialogRef.get();
     if (!dialogDoc.exists) {
+      console.log("[tripPlan] 대화방 없음", shortId, dialogId);
       return res.status(404).json({ error: "대화방이 없습니다." });
     }
     const dialogData = dialogDoc.data();
 
+    console.log("[tripPlan] dialogData: ", dialogData);
+
     if (!dialogData.createdAt) {
+      console.log("[tripPlan] dialogData.createdAt 없음");
     }
     const messagesRef = dialogDoc.ref.collection("messages");
     const snapshot = await messagesRef.get(); // 이 줄 추가!
     if (!snapshot.size) {
+      console.log("[tripPlan] 대화 없음");
       return res.status(404).json({ error: "대화가 없습니다." });
     }
     const dialogDocs = snapshot.docs;
     const dialog = dialogDocs.map((doc) => doc.data());
+
+    console.log("[tripPlan] dialog messages:", dialog);
 
     const dialogText = dialog
       .map(
@@ -203,6 +214,7 @@ Example:
       const client = await auth.getClient();
       const accessToken = await client.getAccessToken();
 
+      console.log("[tripPlan] Gemini API 요청", url);
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -221,11 +233,14 @@ Example:
       });
 
       const data = await response.json();
+      console.log("[tripPlan] Gemini API 응답", JSON.stringify(data));
       const text =
         data.candidates?.[0]?.content?.parts?.[0]?.text ||
         data.candidates?.[0]?.content?.text ||
         JSON.stringify(data);
+      console.log("[tripPlan] Gemini text 추출", text);
       const cleanText = stripCodeBlock(text);
+      console.log("[tripPlan] stripCodeBlock 결과", cleanText);
 
       let schedules = [];
       try {
@@ -233,10 +248,13 @@ Example:
         if (!tryText.trim().startsWith("[")) {
           tryText = `[${tryText}]`;
         }
+        console.log("[tripPlan] 파싱 전 tryText", tryText);
         schedules = JSON.parse(tryText);
         if (!Array.isArray(schedules)) schedules = [];
+        console.log("[tripPlan] 파싱된 schedules", schedules);
       } catch (e) {
-        schedules = [];
+        console.log("[tripPlan] schedules 파싱 실패", e, cleanText);
+        schedules = [{ raw: cleanText, parseError: e.toString() }];
       }
 
       const createdAt = new Date().toISOString();
@@ -244,6 +262,7 @@ Example:
         ...spot,
         createdAt,
       }));
+      console.log("[tripPlan] enrichAllSchedules 결과", enriched);
 
       const counterPath = db
         .collection("tripPlans")
@@ -251,6 +270,7 @@ Example:
         .collection("meta")
         .doc("counter");
       const planId = await getNextAutoId(counterPath);
+      console.log("[tripPlan] planId 생성", planId);
 
       await db
         .collection("tripPlans")
@@ -264,6 +284,7 @@ Example:
         });
       const firstSpot = enriched[0] || {};
       const firstLocation = firstSpot.local || "알 수 없음";
+      console.log("[tripPlan] firstLocation", firstLocation);
 
       // 유효한 썸네일만 필터링해서 랜덤 추출
       const validThumbnails = enriched
@@ -275,18 +296,28 @@ Example:
             url.trim() !== "" &&
             url !== "undefined"
         );
+      console.log("[tripPlan] validThumbnails", validThumbnails);
 
       let planThumbnailImage = "";
       if (validThumbnails.length > 0) {
         const randomIdx = Math.floor(Math.random() * validThumbnails.length);
         planThumbnailImage = validThumbnails[randomIdx];
       }
+      console.log("[tripPlan] planThumbnailImage", planThumbnailImage);
       // 플랜 요약 정보 생성
       const planName = `${firstLocation} ${
         [...new Set(enriched.map((s) => s.date))].length
       }-day trip`;
       const days = [...new Set(enriched.map((s) => s.date))].length;
       const mainSpots = enriched.slice(0, 3).map((s) => s.place);
+      console.log(
+        "[tripPlan] planName",
+        planName,
+        "days",
+        days,
+        "mainSpots",
+        mainSpots
+      );
 
       // users/{userId}/plans/{planId}에 요약 정보 저장
       await db
@@ -322,10 +353,18 @@ Example:
           { merge: true }
         );
 
+      // === 이 아래에 Gemini 답변을 Firestore에 저장하는 코드 추가 ===
+      await messagesRef.add({
+        text: cleanText, // Gemini가 생성한 여행 일정표 원문
+        isUser: false, // Gemini 답변이므로 false
+        createdAt: new Date().toISOString(),
+      });
+
       const responseData = { success: true, planId, schedules: enriched };
+      console.log("[tripPlan] 최종 응답", responseData);
       res.json(responseData);
     } catch (e) {
-      console.error("에러 발생:", e);
+      console.error("[tripPlan] 에러 발생:", e);
       res.status(500).json({ error: e.toString() });
     }
   });
@@ -415,25 +454,43 @@ function getPhotoUrl(photoReference) {
   return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_MAP_KEY}`;
 }
 async function enrichSchedule(schedule) {
-  const placeId = await searchPlace(schedule.place);
-  if (!placeId) return { ...schedule, error: "장소 검색 실패" };
-  const details = await getPlaceDetails(placeId);
+  try {
+    const placeId = await searchPlace(schedule.place);
+    if (!placeId) throw new Error("장소 검색 실패");
+    const details = await getPlaceDetails(placeId);
 
-  return {
-    ...schedule,
-    address: details.formatted_address,
-    latitude: details.geometry.location.lat,
-    longitude: details.geometry.location.lng,
-    openTime: details.opening_hours?.periods?.[0]?.open?.time || null,
-    closeTime: details.opening_hours?.periods?.[0]?.close?.time || null,
-    phone: details.international_phone_number,
-    website: details.website,
-    thumbnail: details.photos?.[0]
-      ? getPhotoUrl(details.photos[0].photo_reference)
-      : null,
-  };
+    return {
+      ...schedule,
+      address: details.formatted_address,
+      latitude: details.geometry.location.lat,
+      longitude: details.geometry.location.lng,
+      openTime: details.opening_hours?.periods?.[0]?.open?.time || null,
+      closeTime: details.opening_hours?.periods?.[0]?.close?.time || null,
+      phone: details.international_phone_number,
+      website: details.website,
+      thumbnail: details.photos?.[0]
+        ? getPhotoUrl(details.photos[0].photo_reference)
+        : null,
+    };
+  } catch (e) {
+    // enrich 실패 시 원본 + enrich 에러 정보 반환
+    return {
+      ...schedule,
+      enrichError: e.toString(),
+      // 아래 필드는 enrich 실패 시 null로 명시
+      address: schedule.address || null,
+      latitude: schedule.latitude || null,
+      longitude: schedule.longitude || null,
+      openTime: schedule.openTime || null,
+      closeTime: schedule.closeTime || null,
+      phone: schedule.phone || null,
+      website: schedule.website || null,
+      thumbnail: schedule.thumbnail || null,
+    };
+  }
 }
 
 async function enrichAllSchedules(schedules) {
+  // enrich 실패해도 원본 schedule을 반환
   return Promise.all(schedules.map(enrichSchedule));
 }

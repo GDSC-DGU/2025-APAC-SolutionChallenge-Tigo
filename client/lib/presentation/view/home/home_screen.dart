@@ -165,21 +165,21 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                   child: Container(
                     height: 72,
                     width: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFB2D9FF), Color(0xFFE7EBFF)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
+                    // decoration: BoxDecoration(
+                    //   shape: BoxShape.circle,
+                    //   gradient: const LinearGradient(
+                    //     colors: [Color(0xFFB2D9FF), Color(0xFFE7EBFF)],
+                    //     begin: Alignment.topLeft,
+                    //     end: Alignment.bottomRight,
+                    //   ),
+                    //   boxShadow: [
+                    //     BoxShadow(
+                    //       color: Colors.blue.withOpacity(0.25),
+                    //       blurRadius: 12,
+                    //       offset: const Offset(0, 4),
+                    //     ),
+                    //   ],
+                    // ),
                     child: const Icon(
                       Icons.home,
                       color: Colors.white,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,6 +21,7 @@ class _TigoPlanCreatingScreenState extends State<TigoPlanCreatingScreen> {
   late final TigoPlanChatViewModel _vm;
   late RiveAnimationController _controller;
   String statusText = "Tigo is creating your trip plan...";
+  String get apiBaseUrl => dotenv.get('API_BASE_URL');
 
   String? userId;
 
@@ -41,7 +43,13 @@ class _TigoPlanCreatingScreenState extends State<TigoPlanCreatingScreen> {
   }
 
   Future<void> _fetchPlan() async {
-    final url = Uri.parse('${_vm.apiBaseUrl}/tripPlan');
+    print('vm_base_url: ${_vm.apiBaseUrl}');
+    final url = Uri.parse(
+      'http://127.0.0.1:5001/tigo-ce719/us-central1/tripPlan',
+    );
+    print('userId: $userId');
+    print('currentDialogId: ${_vm.currentDialogId}');
+
     final body = jsonEncode({
       'userId': userId,
       'dialogId': _vm.currentDialogId,
