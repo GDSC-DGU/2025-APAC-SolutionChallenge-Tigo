@@ -73,7 +73,6 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
               .collection('plans')
               .doc(planId)
               .get();
-
       print('doc: ${jsonEncode(doc.data())}');
       if (!doc.exists) {
         setState(() {

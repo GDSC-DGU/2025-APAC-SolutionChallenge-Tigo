@@ -7,7 +7,7 @@ const location = "us-central1";
 const model = "gemini-2.0-flash-001";
 const axios = require("axios");
 const project = functions.config().tigo?.project_id;
-const GOOGLE_API_KEY = functions.config().tigo?.google_api_key;
+const GOOGLE_MAP_KEY = functions.config().tigo?.google_map_key;
 const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
 if (!admin.apps.length) {
@@ -127,6 +127,7 @@ exports.tripPlan = functions
     if (!dialogData.createdAt) {
     }
     const messagesRef = dialogDoc.ref.collection("messages");
+    const snapshot = await messagesRef.get(); // 이 줄 추가!
     if (!snapshot.size) {
       return res.status(404).json({ error: "대화가 없습니다." });
     }
@@ -141,44 +142,44 @@ exports.tripPlan = functions
       .join("\n");
 
     const systemPrompt = `
-아래는 여행 챗봇과 사용자의 실제 대화 내역입니다.
+Below is the actual conversation history between a travel chatbot and a user.
 
 ${dialogText}
 
-위 대화 히스토리를 참고해서, 
-여행 일정표를 **한국어**로, 그리고 아래와 같은 **JSON 배열** 형태로 만들어줘.
+Based on the above conversation history,  
+create a travel itinerary in **English** and output it as a **JSON array** as shown below.
 
-각 일정(spot)은 반드시 아래의 모든 필드를 포함해야 해.
+Each itinerary spot must include **all** of the following fields:
 
-- "date": "2024-05-20" (방문 날짜, ISO 8601 형식)
-- "time": "09:00" (방문 시간, 24시간제)
-- "local": "서울특별시"(해당 날짜의 방문지역, 예: 부산광역시, 제주도등)
-- "place": "경복궁" (장소명)
-- "category": "궁궐" (장소 카테고리, 예: 궁궐, 박물관, 카페 등)
-- "openTime": "09:00" (오픈 시간, 24시간제)
-- "closeTime": "18:00" (마감 시간, 24시간제)
-- "info": "경복궁은 조선시대의 대표 궁궐로..." (장소에 대한 간단한 설명)
-- "fee": 3000 (입장료, 숫자)
-- "latitude": 37.579617 (위도, 소수점)
-- "longitude": 126.977041 (경도, 소수점)
-- "thumbnail": "https://..." (**실제 존재하는 이미지의 URL만 사용, 반드시 구글 이미지, 위키미디어, 공식 홈페이지 등 신뢰할 수 있는 이미지 링크만 사용**)
+- "date": "2024-05-20" (Visit date, ISO 8601 format)
+- "time": "09:00" (Visit time, 24-hour format)
+- "local": "Seoul" (Region visited on that date, e.g., Busan, Jeju, etc.)
+- "place": "Gyeongbokgung Palace" (Place name)
+- "category": "Palace" (Place category, e.g., Palace, Museum, Cafe, etc.)
+- "openTime": "09:00" (Opening time, 24-hour format)
+- "closeTime": "18:00" (Closing time, 24-hour format)
+- "info": "Gyeongbokgung Palace is the main royal palace of the Joseon dynasty..." (Brief description of the place)
+- "fee": 3000 (Admission fee, number)
+- "latitude": 37.579617 (Latitude, float)
+- "longitude": 126.977041 (Longitude, float)
+- "thumbnail": "https://..." (**Only use real, accessible image URLs, preferably from Google Images, Wikimedia, or official websites. Do not use example text, empty values, icons, logos, or descriptions.**)
 
-**thumbnail 필드는 반드시 실제로 접근 가능한 이미지의 URL이어야 하며, 예시나 임의의 텍스트, 빈 값, 아이콘, 로고, 설명 등은 절대 넣지 마.**
-**반드시 구글 이미지, 위키미디어, 공식 홈페이지 등에서 실제 이미지를 찾아서 그 URL만 넣어.**
+**The thumbnail field must be a real, accessible image URL. Do not use example text, empty values, icons, logos, or descriptions.**
+**Only use image URLs from Google Images, Wikimedia, or official websites.**
 
-**반드시 아래와 같은 JSON 배열 형태로만 출력해줘.**
-예시:
+**Output only a JSON array as shown below, with no explanations or extra text.**
+Example:
 
 [
   {
     "date": "2024-05-20",
     "time": "09:00",
-    "local": "서울특별시",
-    "place": "경복궁",
-    "category": "궁궐",
+    "local": "Seoul",
+    "place": "Gyeongbokgung Palace",
+    "category": "Palace",
     "openTime": "09:00",
     "closeTime": "18:00",
-    "info": "경복궁은 조선시대의 대표 궁궐로...",
+    "info": "Gyeongbokgung Palace is the main royal palace of the Joseon dynasty...",
     "fee": 3000,
     "latitude": 37.579617,
     "longitude": 126.977041,
@@ -186,9 +187,9 @@ ${dialogText}
   }
 ]
 
-**설명이나 부가 텍스트 없이, 반드시 JSON만 출력해줘.**
-**여행 일정은 반드시 최소 3일(3개 날짜) 이상으로 각 날에 3개이상의 일정으로 분배해서 작성해줘.**
-**각 날짜(date)는 서로 달라야 하며, 하루에 여러 spot이 배정될 수 있어.**
+**Do not include any explanations or extra text, only output the JSON array.**
+**The itinerary must cover at least 3 days (3 different dates), and each day should have at least 3 spots.**
+**Each date must be different, and multiple spots can be assigned to a single day.**
 `;
 
     const messagesForGemini = [
@@ -263,12 +264,27 @@ ${dialogText}
         });
       const firstSpot = enriched[0] || {};
       const firstLocation = firstSpot.local || "알 수 없음";
-      const firstThumbnail = firstSpot.thumbnail || "";
+
+      // 유효한 썸네일만 필터링해서 랜덤 추출
+      const validThumbnails = enriched
+        .map((s) => s.thumbnail)
+        .filter(
+          (url) =>
+            typeof url === "string" &&
+            url.startsWith("http") &&
+            url.trim() !== "" &&
+            url !== "undefined"
+        );
+
+      let planThumbnailImage = "";
+      if (validThumbnails.length > 0) {
+        const randomIdx = Math.floor(Math.random() * validThumbnails.length);
+        planThumbnailImage = validThumbnails[randomIdx];
+      }
       // 플랜 요약 정보 생성
       const planName = `${firstLocation} ${
         [...new Set(enriched.map((s) => s.date))].length
       }일 여행`;
-      const planThumbnailImage = firstThumbnail;
       const days = [...new Set(enriched.map((s) => s.date))].length;
       const mainSpots = enriched.slice(0, 3).map((s) => s.place);
 
@@ -300,7 +316,7 @@ ${dialogText}
             userId: shortId,
             planId,
             location: firstLocation,
-            thumbnail: firstThumbnail,
+            thumbnail: planThumbnailImage,
             createdAt,
           },
           { merge: true }
@@ -385,18 +401,18 @@ exports.saveMessage = functions
 async function searchPlace(placeName) {
   const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
     placeName
-  )}&inputtype=textquery&fields=place_id&key=${GOOGLE_API_KEY}`;
+  )}&inputtype=textquery&fields=place_id&key=${GOOGLE_MAP_KEY}`;
   const res = await axios.get(url);
   return res.data.candidates?.[0]?.place_id;
 }
 async function getPlaceDetails(placeId) {
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,geometry,opening_hours,photos,formatted_address,international_phone_number,website&key=${GOOGLE_API_KEY}`;
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,geometry,opening_hours,photos,formatted_address,international_phone_number,website&key=${GOOGLE_MAP_KEY}`;
   const res = await axios.get(url);
   return res.data.result;
 }
 
 function getPhotoUrl(photoReference) {
-  return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_API_KEY}`;
+  return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoReference}&key=${GOOGLE_MAP_KEY}`;
 }
 async function enrichSchedule(schedule) {
   const placeId = await searchPlace(schedule.place);

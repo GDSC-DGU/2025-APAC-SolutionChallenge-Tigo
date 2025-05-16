@@ -351,14 +351,14 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                     width: 30,
                                     decoration: BoxDecoration(
                                       color:
-                                          userQuestionCount >= 0
+                                          userQuestionCount >= 5
                                               ? const Color(0xFF80BFFF)
                                               : Colors.grey,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: IconButton(
                                       onPressed:
-                                          userQuestionCount >= 0
+                                          userQuestionCount >= 5
                                               ? vm.requestTripPlan
                                               : null,
                                       icon: const Icon(
