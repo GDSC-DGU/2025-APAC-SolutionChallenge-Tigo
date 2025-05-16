@@ -68,7 +68,7 @@ class CustomBottomNavigationBar extends BaseWidget<RootViewModel> {
           width: size,
           colorFilter:
               viewModel.selectedIndex == index
-                  ? const ColorFilter.mode(Color(0xFF90CDBE), BlendMode.srcATop)
+                  ? const ColorFilter.mode(Color(0xFF55A3F1), BlendMode.srcATop)
                   : const ColorFilter.mode(
                     Color(0xFF67686D),
                     BlendMode.srcATop,

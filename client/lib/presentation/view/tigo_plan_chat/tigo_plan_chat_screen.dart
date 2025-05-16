@@ -326,7 +326,7 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                   ),
                                   child: IconButton(
                                     onPressed:
-                                        userQuestionCount >= 2
+                                        userQuestionCount >= 5
                                             ? vm.requestTripPlan
                                             : null,
                                     icon: const Icon(
