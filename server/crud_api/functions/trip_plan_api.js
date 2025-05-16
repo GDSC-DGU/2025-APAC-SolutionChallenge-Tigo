@@ -284,7 +284,7 @@ Example:
       // 플랜 요약 정보 생성
       const planName = `${firstLocation} ${
         [...new Set(enriched.map((s) => s.date))].length
-      }일 여행`;
+      }-day trip`;
       const days = [...new Set(enriched.map((s) => s.date))].length;
       const mainSpots = enriched.slice(0, 3).map((s) => s.place);
 

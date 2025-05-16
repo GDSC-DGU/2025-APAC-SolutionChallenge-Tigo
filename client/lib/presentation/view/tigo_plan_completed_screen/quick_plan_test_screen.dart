@@ -553,8 +553,12 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
             child: GestureDetector(
               onTap: () {
                 // 채팅 메시지 명시적으로 초기화
-                final vm = Get.find<TigoPlanChatViewModel>();
-                vm.messages.clear();
+                // 채팅 메시지 명시적으로 초기화 (ViewModel이 이미 등록된 경우에만)
+                if (Get.isRegistered<TigoPlanChatViewModel>()) {
+                  final vm = Get.find<TigoPlanChatViewModel>();
+                  vm.messages.clear();
+                }
+
                 Get.toNamed(
                   AppRoutes.TIGO_PLAN_CHAT,
                   arguments: {

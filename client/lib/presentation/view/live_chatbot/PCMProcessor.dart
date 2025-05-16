@@ -4,7 +4,10 @@ import 'dart:typed_data';
 import 'package:flutter_sound/flutter_sound.dart';
 
 class PCMProcessor {
+  bool isConnected = false; // 연결 상태 외부에서 관리
   PCMProcessor() {
+    print('[PCMProcessor] 생성자 호출됨!!!!!!!!!!');
+
     // print('[PCMProcessor] 생성자 호출됨');
   }
 
@@ -34,6 +37,7 @@ class PCMProcessor {
   final List<Float32List> _pendingData = [];
 
   Future<void> initPlayer() async {
+    await dispose(); // 혹시 남아있던 리소스 먼저 해제
     try {
       if (!_initLogged) {
         print('[PCMProcessor] initPlayer() called');
@@ -45,15 +49,20 @@ class PCMProcessor {
       await _player!.openPlayer();
 
       print('[PCMProcessor] openPlayer() 완료');
+
       await _startPlayerFromStream();
 
       // Regular feeding timer
       _feedTimer = Timer.periodic(Duration(milliseconds: 30), (_) {
+        print(
+          '[PCMProcessor] Timer triggered, buffer length: \\${_audioBuffer.length}',
+        );
         if (_audioBuffer.length == 0) return; // 버퍼가 0이면 아무것도 하지 않음
         if (!_isProcessing) {
           _tryProcessAudio();
         }
       });
+
       // Health check timer to ensure player is running
       _healthCheckTimer = Timer.periodic(Duration(milliseconds: 2000), (_) {
         _checkPlayerHealth();
@@ -86,6 +95,7 @@ class PCMProcessor {
       await Future.delayed(Duration(milliseconds: 500));
       return initPlayer();
     }
+    isConnected = true;
   }
 
   void _checkPlayerHealth() async {
@@ -264,18 +274,24 @@ class PCMProcessor {
     print('[PCMProcessor] dispose() called');
     _feedTimer?.cancel();
     _feedTimer = null;
-
     _healthCheckTimer?.cancel();
     _healthCheckTimer = null;
-
     _playerInitialized = false;
-    await _inputController.close();
-    print('[PCMProcessor] stopPlayer() 호출 (dispose)');
-    await _player?.stopPlayer();
-    print('[PCMProcessor] closePlayer() 호출 (dispose)');
-    await _player?.closePlayer();
-    print('[PCMProcessor] closePlayer() 완료 (dispose)');
-    _player = null;
+    _isProcessing = false;
+    _bufferSmallLogged = false;
+    _initLogged = false;
+    _feedLogged = false;
+    _errorLogged = false;
+    _pendingData.clear();
     _audioBuffer.clear();
+    await _inputController.close();
+    if (_player != null) {
+      try {
+        await _player?.stopPlayer();
+        await _player?.closePlayer();
+      } catch (_) {}
+      _player = null;
+    }
+    isConnected = false;
   }
 }

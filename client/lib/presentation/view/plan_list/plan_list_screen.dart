@@ -15,7 +15,11 @@ class PlanListScreen extends BaseScreen<PlanListViewModel> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('TripPlanList'),
+        title: const Text(
+          'Plans with Tigo',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -35,6 +39,19 @@ class PlanListScreen extends BaseScreen<PlanListViewModel> {
               (_, __) => const SizedBox(height: 28), // 카드 간 간격 넉넉하게
           itemBuilder: (context, idx) {
             final plan = vm.plans[idx];
+
+            // 유효하지 않은 플랜 필터링
+            final isInvalid =
+                plan.planName == '알 수 없음 0일 여행' ||
+                plan.planName.trim().isEmpty ||
+                plan.days == 0 ||
+                plan.planThumbnailImage == null ||
+                plan.planThumbnailImage.toString().trim().isEmpty;
+
+            if (isInvalid) {
+              // 아무것도 렌더링하지 않음
+              return const SizedBox.shrink();
+            }
             return GestureDetector(
               onTap: () {
                 Get.to(() => QuickPlanTestScreen(planId: plan.planId));

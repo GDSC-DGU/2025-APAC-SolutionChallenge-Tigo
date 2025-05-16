@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tigo/app/config/index.dart';
+import 'package:tigo/presentation/view/live_chatbot/LiveMediaManager.dart';
 import 'package:tigo/presentation/view/live_chatbot/script.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -55,7 +56,7 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
       });
     };
     await demoController.init();
-    _connect(); // 자동 연결
+    // _connect(); // 자동 연결
   }
 
   void _showSnackBar(String title, String message) {
@@ -83,7 +84,20 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
       });
       return;
     }
+
+    // 오디오 플레이어 무조건 재초기화
+    await demoController.pcmProcessor.dispose();
+    await demoController.pcmProcessor.initPlayer();
+    demoController.audioOutputManager = LiveAudioOutputManager(
+      demoController.pcmProcessor,
+    );
+
+    // 마이크도 무조건 재연결
+    await demoController.audioInputManager?.disconnectMicrophone();
+    await demoController.audioInputManager?.connectMicrophone();
+
     await demoController.connect(projectId, "", "AUDIO");
+    demoController.pcmProcessor.isConnected = true; // 동기화!
     await demoController.startCameraCapture();
     _showSnackBar(
       'Connect With TigoLiveChatbot',
@@ -93,6 +107,7 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
 
   Future<void> _disconnect() async {
     await demoController.disconnect();
+    demoController.pcmProcessor.isConnected = false; // 동기화!
     await demoController.stopCameraCapture();
     setState(() {
       isConnected = false;
@@ -101,7 +116,7 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
     });
     _showSnackBar(
       'DisConnect With TigoLiveChatbot',
-      'You can not use Multimodal Live Streaming Tigo!',
+      'Multimodal Live Streaming Tigo time is over!',
     );
   }
 
@@ -180,7 +195,7 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
     final cameraView = Stack(
       children: [
         if (cameraController != null && cameraController!.value.isInitialized)
-          CameraPreview(cameraController!)
+          Positioned.fill(child: CameraPreview(cameraController!))
         else
           Container(color: Colors.black),
         Positioned(
@@ -220,7 +235,10 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.offAllNamed(AppRoutes.ROOT),
         ),
-        title: const Text('Live Gemini View'),
+        title: const Text(
+          'Gemini Live Chatbot',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -230,7 +248,7 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
         child: ElevatedButton(
           onPressed: isConnected ? _disconnect : _connect,
           child: Text(
-            isConnected ? "UnConnect With Tigo" : "Connect With Tigo",
+            isConnected ? "Unconnect With Tigo" : "Connect With Tigo",
           ),
         ),
       ),

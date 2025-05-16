@@ -333,7 +333,8 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                 const Expanded(
                                   child: Center(
                                     child: Text(
-                                      'Ask me anything',
+                                      'Ask to Tigo!',
+
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
