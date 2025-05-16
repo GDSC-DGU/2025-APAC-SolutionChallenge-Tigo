@@ -290,68 +290,81 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                               );
                             }
 
+
+
                             return Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // 1. 타임라인(번호, 거리, 점선) - 고정 width
-                                SizedBox(
-                                  width: 48, // 원하는 만큼
-                                  child: Column(
-                                    children: [
-                                      // 번호 원
-                                      CircleAvatar(
-                                        radius: 16,
-                                        backgroundColor: Colors.grey[800],
-                                        child: Text(
-                                          '${idx + 1}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                      // 거리/아이콘/텍스트
-                                      if (idx > 0) ...[
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          width: 28,
-                                          height: 28,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.grey[300]!,
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: SvgPicture.asset(
-                                              Assets.distanceIcon,
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        if (distance != null)
-                                          Text(
-                                            '${distance.toStringAsFixed(1)} km',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                      ],
-                                      // 아래쪽 점선
-                                      if (idx < spots.length - 1)
-                                        Container(
-                                          height: 120, // 원하는 점선 길이
-                                          width: 2,
-                                          child: CustomPaint(
-                                            painter: DashedLinePainter(),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
+                                // SizedBox(
+                                //   width: 48,
+                                //   child: Column(
+                                //     children: [
+                                //       if (idx == 0) ...[
+                                //         // 1번 인덱스: 번호 원만
+                                //         CircleAvatar(
+                                //           radius: 16,
+                                //           backgroundColor: Colors.grey[800],
+                                //           child: Text(
+                                //             '${idx + 1}',
+                                //             style: const TextStyle(
+                                //               color: Colors.white,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //       ] else ...[
+                                //         // 2번 이상: 거리/아이콘/점선/번호 원
+                                //         Container(
+                                //           width: 28,
+                                //           height: 28,
+                                //           decoration: BoxDecoration(
+                                //             color: Colors.white,
+                                //             shape: BoxShape.circle,
+                                //             border: Border.all(
+                                //               color: Colors.grey[300]!,
+                                //             ),
+                                //           ),
+                                //           child: Center(
+                                //             child: SvgPicture.asset(
+                                //               Assets.distanceIcon,
+                                //               width: 16,
+                                //               height: 16,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //         const SizedBox(height: 2),
+                                //         if (distance != null)
+                                //           Text(
+                                //             '${distance.toStringAsFixed(1)} km',
+                                //             style: const TextStyle(
+                                //               color: Colors.grey,
+                                //               fontSize: 12,
+                                //             ),
+                                //           ),
+                                //         Container(height: 16),
+                                //         CircleAvatar(
+                                //           radius: 16,
+                                //           backgroundColor: Colors.grey[800],
+                                //           child: Text(
+                                //             '${idx + 1}',
+                                //             style: const TextStyle(
+                                //               color: Colors.white,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //         // 아래쪽 점선 (마지막이 아니면)
+                                //         if (idx < spots.length - 1)
+                                //           Container(
+                                //             height: 120,
+                                //             width: 2,
+                                //             child: CustomPaint(
+                                //               painter: DashedLinePainter(),
+                                //             ),
+                                //           ),
+                                //       ],
+                                //     ],
+                                //   ),
+                                // ),
                                 const SizedBox(width: 12), // 타임라인과 본문 사이 간격
                                 // 2. 본문(썸네일, 이름, 카테고리, 상세정보)
                                 Expanded(
@@ -364,28 +377,53 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          SizedBox(
-                                            width: 56,
-                                            height: 56,
+                                          GestureDetector(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (_) => Dialog(
+                                                      backgroundColor:
+                                                          Colors.transparent,
+                                                      child: GestureDetector(
+                                                        onTap:
+                                                            () =>
+                                                                Navigator.of(
+                                                                  context,
+                                                                ).pop(),
+                                                        child: InteractiveViewer(
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  16,
+                                                                ),
+                                                            child: Image.network(
+                                                              spot['thumbnail'],
+                                                              fit:
+                                                                  BoxFit
+                                                                      .contain,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                              );
+                                            },
                                             child: ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               child:
-                                                  (spot['thumbnail'] != null &&
-                                                          (spot['thumbnail']
-                                                                  as String)
-                                                              .isNotEmpty)
+                                                  spot['thumbnail'] != null
                                                       ? Image.network(
                                                         spot['thumbnail'],
+                                                        width: 120,
+                                                        height: 80,
                                                         fit: BoxFit.cover,
                                                       )
                                                       : Container(
-                                                        color: Colors.grey[300],
-                                                        child: const Icon(
-                                                          Icons.broken_image,
-                                                          color: Colors.grey,
-                                                          size: 32,
-                                                        ),
+                                                        width: 120,
+                                                        height: 80,
+                                                        color: Colors.grey[200],
                                                       ),
                                             ),
                                           ),
