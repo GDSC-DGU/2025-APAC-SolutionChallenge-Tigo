@@ -28,15 +28,10 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF4DAEFF),
-                    Color(0xFFEFF5FB),
-                  ],
+                  colors: [Color(0xFF4DAEFF), Color(0xFFEFF5FB)],
                 ),
               ),
-              child: CustomPaint(
-                painter: _HighlightPainter(),
-              ),
+              child: CustomPaint(painter: _HighlightPainter()),
             ),
           ),
           // Gradient Overlay
@@ -204,18 +199,21 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
 class _HighlightPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(0.8, -0.6),
-        radius: 1.4,
-        colors: [
-          Colors.white.withOpacity(0.6),
-          Colors.white.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width * 0.9, size.height * 0.15),
-        radius: size.width * 1.3,
-      ));
+    final paint =
+        Paint()
+          ..shader = RadialGradient(
+            center: const Alignment(0.8, -0.6),
+            radius: 1.4,
+            colors: [
+              Colors.white.withOpacity(0.6),
+              Colors.white.withOpacity(0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.9, size.height * 0.15),
+              radius: size.width * 1.3,
+            ),
+          );
 
     canvas.save();
 
