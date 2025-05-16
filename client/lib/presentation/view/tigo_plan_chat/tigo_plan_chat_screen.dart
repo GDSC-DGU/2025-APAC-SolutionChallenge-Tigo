@@ -72,6 +72,15 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     });
   }
 
+  // promptPath를 arguments에서 받아오기
+  String get _promptPath {
+    final args = Get.arguments;
+    if (args is Map && args['promptPath'] is String) {
+      return args['promptPath'] as String;
+    }
+    return 'assets/prompts/travel_recommend_prompt.md';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -81,10 +90,15 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
         // Firestore 기반 대화방 생성 및 실시간 리스닝 시작
         await vm.startNewDialog();
         // 첫 질문(프롬프트)을 Firestore에 저장
-        await vm.addMessage(
-          "현재 당신의 여행 계획 중 정해진 부분을 자유롭게 입력해주세요~\nex) 5월 말에 친구 6명이랑 서울로 여행을 갈 계획이야.",
-          isUser: false,
-        );
+        String firstMessage;
+        if (_promptPath.contains('free_question_prompt.md')) {
+          firstMessage =
+              "Do you want to develop your existing plan further? Or would you like to create something new? Just ask me anything!";
+        } else {
+          firstMessage =
+              "Please freely enter any parts of your travel plan that are already decided.\nex) I'm planning to travel to Seoul with 6 friends at the end of May.";
+        }
+        await vm.addMessage(firstMessage, isUser: false);
       }
     });
   }
@@ -93,6 +107,9 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
   void dispose() {
     _controller.dispose();
     _ytController?.close();
+    // 채팅창 벗어날 때 메시지 초기화
+    final vm = Get.find<TigoPlanChatViewModel>();
+    vm.messages.clear();
     super.dispose();
   }
 
@@ -111,8 +128,12 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
     // Firestore에 유저 메시지 저장
     await vm.addMessage(text, isUser: true);
 
-    // Gemini 답변 받아오기
-    final geminiAnswer = await vm.callGeminiWithHistory(vm.messages, text);
+    // Gemini 답변 받아오기 (promptPath 적용)
+    final geminiAnswer = await vm.callGeminiWithHistory(
+      vm.messages,
+      text,
+      promptPath: _promptPath,
+    );
 
     // 1. 답변을 바로 messages에 추가 (isTypingMessage: true로 구분)
     final typingMsg = ChatMessage(text: "", isUser: false);
@@ -295,7 +316,15 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                             Row(
                               children: [
                                 GestureDetector(
-                                  onTap: () => Navigator.pop(context),
+                                  onTap: () {
+                                    if (_promptPath.contains(
+                                      'free_question_prompt.md',
+                                    )) {
+                                      Get.offAllNamed(AppRoutes.ROOT);
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  },
                                   child: const Icon(
                                     Icons.arrow_back_ios,
                                     size: 20,
@@ -314,29 +343,32 @@ class _TigoPlanChatScreenBodyState extends State<_TigoPlanChatScreenBody> {
                                 ),
                                 const SizedBox(width: 20),
 
-                                Container(
-                                  height: 30,
-                                  width: 30,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        userQuestionCount >= 5
-                                            ? const Color(0xFF80BFFF)
-                                            : Colors.grey,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: IconButton(
-                                    onPressed:
-                                        userQuestionCount >= 5
-                                            ? vm.requestTripPlan
-                                            : null,
-                                    icon: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
+                                if (!_promptPath.contains(
+                                  'free_question_prompt.md',
+                                ))
+                                  Container(
+                                    height: 30,
+                                    width: 30,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          userQuestionCount >= 0
+                                              ? const Color(0xFF80BFFF)
+                                              : Colors.grey,
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    iconSize: 15,
-                                    padding: EdgeInsets.zero,
+                                    child: IconButton(
+                                      onPressed:
+                                          userQuestionCount >= 0
+                                              ? vm.requestTripPlan
+                                              : null,
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.white,
+                                      ),
+                                      iconSize: 15,
+                                      padding: EdgeInsets.zero,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                             const SizedBox(height: 8),

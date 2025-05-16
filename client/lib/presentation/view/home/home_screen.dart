@@ -73,7 +73,7 @@ class HomeScreen extends BaseScreen<HomeViewModel> {
                   child: TempPlanCard(
                     iconAssetPath: 'assets/images/for_conversation.png',
                     title: ' For Conversation',
-                    date: ' Plan a trip with TIGO',
+                    date: ' Plan a trip with Tigo',
                     bgColor: const Color(0xFFE7F2FF),
                     onTap: () {
                       Get.toNamed(AppRoutes.TIGO_PLAN_CHAT);

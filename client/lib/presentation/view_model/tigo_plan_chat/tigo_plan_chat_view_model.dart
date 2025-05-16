@@ -25,7 +25,6 @@ class TigoPlanChatViewModel extends GetxController {
 
   // 대화방 생성
   Future<void> startNewDialog() async {
-
     print('userId in startDialog: $userId');
     final dialogsRef = FirebaseFirestore.instance
         .collection('users')
@@ -84,7 +83,6 @@ class TigoPlanChatViewModel extends GetxController {
     // Get.offAllNamed(AppRoutes.TIGO_PLAN_CREATING, arguments: userId);
     print('userId in request TripPlan: ${userId}');
     Get.toNamed(AppRoutes.TIGO_PLAN_CREATING, arguments: {'userId': userId});
-
   }
   // Future<List<Map<String, dynamic>>> requestTripPlan() async {
   //   // Firestore에 dialogs 문서가 실제로 있는지 확인
@@ -129,6 +127,13 @@ class TigoPlanChatViewModel extends GetxController {
   void onClose() {
     _messagesSub?.cancel();
     super.onClose();
+  }
+
+  @override
+  void dispose() {
+    _messagesSub?.cancel();
+
+    super.dispose();
   }
 
   String get geminiApiKey => dotenv.get('GEMINI_API_KEY');
@@ -354,28 +359,28 @@ $videoListText
 
   // Gemini API 호출용 프롬프트 생성 함수
   Future<String> buildGeminiPromptWithHistory(
-    List<ChatMessage> messages,
-  ) async {
+    List<ChatMessage> messages, {
+    String promptPath = 'assets/prompts/travel_recommend_prompt.md',
+  }) async {
     // 1. 프롬프트 파일 읽기
-    final prompt = await rootBundle.loadString(
-      'assets/prompts/travel_recommend_prompt.md',
-    );
+    final prompt = await rootBundle.loadString(promptPath);
 
     // 2. Firestore에서 불러온 messages를 role별로 변환
+
     final history = messages
         .map((m) {
           final role = m.isUser ? 'user' : 'assistant';
-          return '$role: [33m${m.text}[0m';
+          return '$role: \x1B[33m[33m${m.text}\x1B[0m[0m';
         })
         .join('\n');
 
-    print('==== [Gemini 프롬프트] travel_recommend_prompt.md ====');
+    print('==== [Gemini 프롬프트] ' + promptPath + ' ====');
     print(prompt);
     print('==== [Gemini 대화 히스토리] ====');
     print(history);
 
     // 3. 최종 프롬프트 조합
-    final fullPrompt = '$prompt\n\n[대화 내역]\n$history\n';
+    final fullPrompt = '[33m$prompt\n\n[대화 내역]\n$history\n[0m';
     print('==== [Gemini 최종 프롬프트] ====');
     print(fullPrompt);
     return fullPrompt;
@@ -384,8 +389,9 @@ $videoListText
   // Gemini API 호출 시 사용 예시
   Future<String> callGeminiWithHistory(
     List<ChatMessage> messages,
-    String userInput,
-  ) async {
+    String userInput, {
+    String promptPath = 'assets/prompts/travel_recommend_prompt.md',
+  }) async {
     // 만약 messages 마지막이 이미 userInput이면, 중복 추가하지 않음
     List<ChatMessage> history = List.from(messages);
     if (history.isEmpty ||
@@ -396,14 +402,17 @@ $videoListText
 
     print('==== [Gemini 호출] userInput ====');
     print(userInput);
-    print('==== [Gemini 호출] history.length: ${history.length} ====');
+    print('==== [Gemini 호출] history.length: [33m${history.length}[0m ====');
     for (var i = 0; i < history.length; i++) {
       print(
         '  [${i + 1}] ${history[i].isUser ? 'user' : 'assistant'}: ${history[i].text}',
       );
     }
 
-    final fullPrompt = await buildGeminiPromptWithHistory(history);
+    final fullPrompt = await buildGeminiPromptWithHistory(
+      history,
+      promptPath: promptPath,
+    );
 
     final url = Uri.parse(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$geminiApiKey',

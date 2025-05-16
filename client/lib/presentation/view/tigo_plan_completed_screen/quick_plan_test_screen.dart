@@ -11,6 +11,7 @@ import 'package:tigo/core/constant/assets.dart';
 import 'package:tigo/presentation/view_model/home/home_view_model.dart';
 import 'dart:math';
 import 'package:intl/intl.dart';
+import 'package:tigo/presentation/view_model/tigo_plan_chat/tigo_plan_chat_view_model.dart';
 
 class QuickPlanTestScreen extends StatefulWidget {
   final String? planId;
@@ -150,7 +151,7 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
             Get.offAllNamed(AppRoutes.ROOT);
           },
         ),
-        title: const Text('여행 플랜 결과'),
+        title: const Text('Plan Made With Tigo'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.white,
@@ -289,8 +290,6 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                 spot['longitude'],
                               );
                             }
-
-
 
                             return Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,7 +491,7 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                             if (spot['openTime'] != null &&
                                                 spot['closeTime'] != null)
                                               Text(
-                                                '영업: ${spot['openTime']} ~ ${spot['closeTime']}',
+                                                'Operating hours: ${spot['openTime']} ~ ${spot['closeTime']}',
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   color: Color(0xFF6B7280),
@@ -500,7 +499,8 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                               ),
                                             if (spot['fee'] != null)
                                               Text(
-                                                '입장료: ${spot['fee']}원',
+                                                // 영어로 변경
+                                                'Entrance fee: ${spot['fee']}₩',
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   color: Color(0xFF6B7280),
@@ -516,7 +516,7 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                               ),
                                             if (spot['phone'] != null)
                                               Text(
-                                                '전화: ${spot['phone']}',
+                                                'Phone: ${spot['phone']}',
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   color: Color(0xFF6B7280),
@@ -528,7 +528,7 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
                                                 (spot['website'] as String)
                                                     .isNotEmpty)
                                               Text(
-                                                '웹사이트: ${spot['website']}',
+                                                'Website: ${spot['website']}',
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   color: Color(0xFF6B7280),
@@ -553,7 +553,15 @@ class _QuickPlanTestScreenState extends State<QuickPlanTestScreen> {
             bottom: 48,
             child: GestureDetector(
               onTap: () {
-                Get.toNamed(AppRoutes.TIGO_PLAN_CHAT);
+                // 채팅 메시지 명시적으로 초기화
+                final vm = Get.find<TigoPlanChatViewModel>();
+                vm.messages.clear();
+                Get.toNamed(
+                  AppRoutes.TIGO_PLAN_CHAT,
+                  arguments: {
+                    'promptPath': 'assets/prompts/free_question_prompt.md',
+                  },
+                );
               },
               child: Container(
                 width: 90,

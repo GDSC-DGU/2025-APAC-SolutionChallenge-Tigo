@@ -19,7 +19,8 @@ class TigoPlanCreatingScreen extends StatefulWidget {
 class _TigoPlanCreatingScreenState extends State<TigoPlanCreatingScreen> {
   late final TigoPlanChatViewModel _vm;
   late RiveAnimationController _controller;
-  String statusText = "Generating Plan...";
+  String statusText = "Tigo is creating your trip plan...";
+
   String? userId;
 
   @override

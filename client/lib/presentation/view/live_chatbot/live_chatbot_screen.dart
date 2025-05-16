@@ -6,6 +6,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tigo/app/config/index.dart';
 import 'package:tigo/presentation/view/live_chatbot/script.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 enum FullScreenType { none, map, camera }
 
@@ -23,11 +25,15 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
   String lastError = "";
   CameraController? get cameraController => demoController.cameraController;
   FullScreenType _fullScreen = FullScreenType.none;
+  GoogleMapController? _mapController;
+  LatLng? _currentPosition;
+  final Set<Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
     _initAll();
+    _getCurrentLocation(); // 현재 위치 가져오기
     WidgetsBinding.instance.addPostFrameCallback((_) {
       demoController.setOnNewVideoFrame((b64Image) {
         // 필요시 프레임 처리
@@ -52,6 +58,18 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
     _connect(); // 자동 연결
   }
 
+  void _showSnackBar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.TOP,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      duration: const Duration(seconds: 2),
+      backgroundColor: Colors.black.withOpacity(0.7),
+      colorText: Colors.white,
+    );
+  }
+
   Future<void> _connect() async {
     setState(() {
       status = AppStatus.connecting;
@@ -66,21 +84,63 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
       return;
     }
     await demoController.connect(projectId, "", "AUDIO");
+    await demoController.startCameraCapture();
+    _showSnackBar(
+      'Connect With TigoLiveChatbot',
+      'You can use Multimodal Live Streaming Tigo!',
+    );
   }
 
   Future<void> _disconnect() async {
     await demoController.disconnect();
+    await demoController.stopCameraCapture();
     setState(() {
       isConnected = false;
       status = AppStatus.disconnected;
       isCameraOn = false;
     });
+    _showSnackBar(
+      'DisConnect With TigoLiveChatbot',
+      'You can not use Multimodal Live Streaming Tigo!',
+    );
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('currentLocation'),
+            position: _currentPosition!,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueBlue,
+            ),
+            infoWindow: const InfoWindow(title: '현재 위치'),
+          ),
+        );
+      });
+
+      // 지도 컨트롤러가 있다면 카메라 이동
+      _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: _currentPosition!, zoom: 15),
+        ),
+      );
+    } catch (e) {
+      print('위치를 가져오는데 실패했습니다: $e');
+    }
   }
 
   @override
   void dispose() {
     cameraController?.dispose();
     demoController.audioInputManager?.disconnectMicrophone();
+    demoController.stopCameraCapture(); // 카메라 프레임 스트림 중지
     super.dispose();
   }
 
@@ -90,9 +150,15 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
       children: [
         GoogleMap(
           initialCameraPosition: CameraPosition(
-            target: LatLng(37.5665, 126.9780), // 서울 시청 위치
+            target: LatLng(37.5665, 126.9780),
             zoom: 14,
           ),
+          onMapCreated: (GoogleMapController controller) {
+            _mapController = controller;
+          },
+          markers: _markers,
+          myLocationEnabled: true, // 내 위치 버튼 활성화
+          myLocationButtonEnabled: true, // 내 위치 버튼 표시
         ),
         Positioned(
           bottom: 16,
@@ -141,7 +207,10 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
       body = cameraView;
     } else {
       body = Column(
-        children: [Expanded(child: mapView), Expanded(child: cameraView)],
+        children: [
+          Expanded(child: mapView),
+          Expanded(child: Container(width: double.infinity, child: cameraView)),
+        ],
       );
     }
 
@@ -157,19 +226,13 @@ class _LiveChatbotScreenState extends State<LiveChatbotScreen> {
         foregroundColor: Colors.black,
       ),
       body: body,
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ElevatedButton(
-            onPressed: isConnected ? null : _connect,
-            child: Text("Connect"),
+      floatingActionButton: Center(
+        child: ElevatedButton(
+          onPressed: isConnected ? _disconnect : _connect,
+          child: Text(
+            isConnected ? "UnConnect With Tigo" : "Connect With Tigo",
           ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: isConnected ? _disconnect : null,
-            child: Text("Disconnect"),
-          ),
-        ],
+        ),
       ),
     );
   }

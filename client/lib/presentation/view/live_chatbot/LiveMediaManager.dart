@@ -193,7 +193,7 @@ class LiveVideoManager {
       _latestImage = image; // 항상 최신 프레임만 저장
     });
 
-    // 2. 1초마다 최신 프레임을 캡처해서 콜백
+  // 2. 1초마다 최신 프레임을 캡처해서 콜백
     _intervalTimer = Timer.periodic(Duration(seconds: 1), (_) async {
       if (_latestImage != null && onNewFrame != null) {
         String? base64Image = await _convertCameraImageToBase64Jpeg(
